@@ -15,11 +15,11 @@ StorageManager& StorageManager::get() {
   return storageManager;
 }
 
-void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> table) { 
+void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> table) {
   if (has_table(name)) {
     throw std::runtime_error("Cannot add table, because a table with this name already exists");
   }
-  _tables[name] = table; 
+  _tables[name] = table;
 }
 
 void StorageManager::drop_table(const std::string& name) {
@@ -29,9 +29,7 @@ void StorageManager::drop_table(const std::string& name) {
   _tables.erase(name);
 }
 
-std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const { 
-  return _tables.at(name); 
-}
+std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const { return _tables.at(name); }
 
 bool StorageManager::has_table(const std::string& name) const { return _tables.contains(name); }
 

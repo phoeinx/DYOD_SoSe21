@@ -1,5 +1,5 @@
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <sstream>
 
 #include "../base_test.hpp"
@@ -83,7 +83,7 @@ TEST_F(StorageStorageManagerTest, PrintTable) {
   std::string printed_text = buffer.str();
   // Restore original buffer before exiting
   std::cout.rdbuf(prevcoutbuf);
-  
+
   EXPECT_EQ(printed_text, expected);
 }
 
