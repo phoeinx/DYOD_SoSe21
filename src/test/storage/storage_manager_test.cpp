@@ -1,4 +1,6 @@
 #include <memory>
+#include <iostream>
+#include <sstream>
 
 #include "../base_test.hpp"
 #include "gtest/gtest.h"
@@ -19,6 +21,16 @@ class StorageStorageManagerTest : public BaseTest {
     sm.add_table("second_table", t2);
   }
 };
+
+TEST_F(StorageStorageManagerTest, AddTable) {
+  auto& sm = StorageManager::get();
+  auto t3 = std::make_shared<Table>();
+
+  sm.add_table("third_table", t3);
+  EXPECT_EQ(sm.table_names().size(), 3u);
+
+  EXPECT_THROW(sm.add_table("first_table", t3), std::exception);
+}
 
 TEST_F(StorageStorageManagerTest, GetTable) {
   auto& sm = StorageManager::get();
@@ -48,6 +60,31 @@ TEST_F(StorageStorageManagerTest, DoesNotHaveTable) {
 TEST_F(StorageStorageManagerTest, HasTable) {
   auto& sm = StorageManager::get();
   EXPECT_EQ(sm.has_table("first_table"), true);
+  EXPECT_EQ(sm.has_table("some_other_table"), false);
+}
+
+TEST_F(StorageStorageManagerTest, GetTableNames) {
+  std::vector<std::string> sm_table_names = StorageManager::get().table_names();
+
+  std::sort(sm_table_names.begin(), sm_table_names.end());
+
+  EXPECT_EQ(sm_table_names, std::vector<std::string>({"first_table", "second_table"}));
+}
+
+TEST_F(StorageStorageManagerTest, PrintTable) {
+  auto& sm = StorageManager::get();
+  sm.drop_table("second_table");
+  std::string expected = "first_table #columns: 0 #rows: 0 #chunks: 1\n";
+
+  std::stringstream buffer;
+  std::streambuf* prevcoutbuf = std::cout.rdbuf(buffer.rdbuf());
+
+  sm.print();
+  std::string printed_text = buffer.str();
+  // Restore original buffer before exiting
+  std::cout.rdbuf(prevcoutbuf);
+  
+  EXPECT_EQ(printed_text, expected);
 }
 
 }  // namespace opossum

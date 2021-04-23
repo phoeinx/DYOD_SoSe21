@@ -22,11 +22,18 @@ class StorageChunkTest : public BaseTest {
     string_value_segment->append("Hello,");
     string_value_segment->append("world");
     string_value_segment->append("!");
+
+    int_value_segment_4_elements = std::make_shared<ValueSegment<int32_t>>();
+    int_value_segment_4_elements->append(4);
+    int_value_segment_4_elements->append(6);
+    int_value_segment_4_elements->append(3);
+    int_value_segment_4_elements->append(3);
   }
 
   Chunk c;
   std::shared_ptr<BaseSegment> int_value_segment = nullptr;
   std::shared_ptr<BaseSegment> string_value_segment = nullptr;
+  std::shared_ptr<BaseSegment> int_value_segment_4_elements = nullptr;
 };
 
 TEST_F(StorageChunkTest, AddSegmentToChunk) {
@@ -36,6 +43,8 @@ TEST_F(StorageChunkTest, AddSegmentToChunk) {
   c.add_segment(string_value_segment);
   EXPECT_EQ(c.column_count(), 2u);
   EXPECT_EQ(c.size(), 3u);
+
+  EXPECT_THROW(c.add_segment(int_value_segment_4_elements), std::exception);
 }
 
 TEST_F(StorageChunkTest, AddValuesToChunk) {
