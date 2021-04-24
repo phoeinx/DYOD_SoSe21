@@ -24,7 +24,7 @@ void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> t
 
 void StorageManager::drop_table(const std::string& name) {
   if (!_tables[name]) {
-    throw std::runtime_error("Cannot drop non-existing table.");
+    throw std::runtime_error("Cannot drop non-existing table");
   }
   _tables.erase(name);
 }
@@ -42,6 +42,7 @@ std::vector<std::string> StorageManager::table_names() const {
 }
 
 void StorageManager::print(std::ostream& out) const {
+  std::cout << "StorageManager #tables: " << _tables.size() << std::endl;
   for (const auto& [table_name, table] : _tables) {
     std::cout << table_name << " #columns: " << table->column_count() << " #rows: " << table->row_count()
               << " #chunks: " << table->chunk_count() << std::endl;

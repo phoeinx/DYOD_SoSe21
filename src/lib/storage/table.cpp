@@ -24,7 +24,7 @@ Table::Table(const ChunkOffset target_chunk_size) {
 
 void Table::add_column(const std::string& name, const std::string& type) {
   if (row_count() != 0) {
-    throw std::runtime_error("Cannot add column to non empty table.");
+    throw std::runtime_error("Cannot add column to non-empty table");
   }
   _column_names.push_back(name);
   _column_types.push_back(type);
@@ -46,17 +46,17 @@ void Table::append(const std::vector<AllTypeVariant>& values) {
 ColumnCount Table::column_count() const { return _chunks[0]->column_count(); }
 
 uint64_t Table::row_count() const {
-  auto completed_chunks_size = (chunk_count() - 1) * _target_chunk_size;
-  auto last_chunk_size = _chunks[chunk_count() - 1]->size();
+  const auto completed_chunks_size = (chunk_count() - 1) * _target_chunk_size;
+  const auto last_chunk_size = _chunks[chunk_count() - 1]->size();
   return completed_chunks_size + last_chunk_size;
 }
 
 ChunkID Table::chunk_count() const { return ChunkID{_chunks.size()}; }
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
-  auto it = std::find(_column_names.begin(), _column_names.end(), column_name);
+  const auto it = std::find(_column_names.begin(), _column_names.end(), column_name);
   if (it == _column_names.end()) {
-    throw std::runtime_error("Column not found.");
+    throw std::runtime_error("Column not found");
   }
   return static_cast<ColumnID>(std::distance(_column_names.begin(), it));
 }

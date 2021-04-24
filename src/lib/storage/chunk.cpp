@@ -16,14 +16,13 @@ namespace opossum {
 
 void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) {
   if (size() != 0 && segment->size() != size()) {
-    throw std::runtime_error("Segment needs to have same number of rows as Chunk.");
+    throw std::runtime_error("Segment needs to have same number of rows as chunk");
   }
-
   _segments.push_back(segment);
 }
 
 void Chunk::append(const std::vector<AllTypeVariant>& values) {
-  DebugAssert(values.size() == column_count(), "Needs same number of values as columns.");
+  DebugAssert(values.size() == column_count(), "New values need same number of values as chunk columns");
   for (auto i = 0ul, end = values.size(); i < end; i++) {
     _segments[i]->append(values[i]);
   }

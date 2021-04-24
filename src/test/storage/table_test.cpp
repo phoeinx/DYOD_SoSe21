@@ -31,13 +31,16 @@ TEST_F(StorageTableTest, ChunkCount) {
 }
 
 TEST_F(StorageTableTest, GetChunk) {
-  t.get_chunk(ChunkID{0});
-  EXPECT_THROW(t.get_chunk(ChunkID{7}), std::exception);
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).size(), 0u);
+  EXPECT_EQ(std::as_const(t).get_chunk(ChunkID{0}).size(), 0u);
+  EXPECT_THROW(t.get_chunk(ChunkID{1}), std::exception);
+
   t.append({4, "Hello,"});
   t.append({6, "world"});
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).size(), 2u);
+
   t.append({3, "!"});
-  t.get_chunk(ChunkID{1});
-  std::as_const(t).get_chunk(ChunkID{0});
+  EXPECT_EQ(t.get_chunk(ChunkID{1}).size(), 1u);
 }
 
 TEST_F(StorageTableTest, AddColumn) {
