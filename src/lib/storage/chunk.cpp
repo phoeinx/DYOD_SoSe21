@@ -15,9 +15,7 @@
 namespace opossum {
 
 void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) {
-  if (size() != 0 && segment->size() != size()) {
-    throw std::runtime_error("Segment needs to have same number of rows as chunk");
-  }
+  Assert(size() == 0 || segment->size() == size(), "Segment needs to have same number of rows as chunk");
   _segments.push_back(segment);
 }
 
