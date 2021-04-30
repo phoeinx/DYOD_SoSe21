@@ -79,4 +79,6 @@ void Table::_add_value_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std
   });
 }
 
+void Table::compress_chunk(ChunkID chunk_id) { throw std::runtime_error("Implement Table::compress_chunk"); }
+
 }  // namespace opossum
