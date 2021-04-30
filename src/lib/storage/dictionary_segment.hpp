@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <string>
@@ -7,6 +8,7 @@
 #include <vector>
 
 #include "all_type_variant.hpp"
+#include "type_cast.hpp"
 #include "types.hpp"
 
 namespace opossum {
@@ -25,7 +27,27 @@ class DictionarySegment : public BaseSegment {
   /**
    * Creates a Dictionary segment from a given value segment.
    */
-  explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {}
+  explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
+    const auto segment_size = base_segment->size();
+    _dictionary = std::make_shared<std::vector<T>>(segment_size);
+    _attribute_vector = std::make_shared<std::vector<uint32_t>>(segment_size);
+
+    for (auto cell_id = 0u; cell_id < segment_size; ++cell_id) {
+      (*_dictionary)[cell_id] = type_cast<T>((*base_segment)[cell_id]);
+    }
+
+    std::sort(_dictionary->begin(), _dictionary->end());
+
+    auto last = std::unique(_dictionary->begin(), _dictionary->end());
+    _dictionary->erase(last, _dictionary->end());
+
+    for (auto cell_id = 0u; cell_id < segment_size; ++cell_id) {
+      const auto value = type_cast<T>((*base_segment)[cell_id]);
+      const auto dictionary_value_it = std::lower_bound(_dictionary->begin(), _dictionary->end(), value);
+      const auto dictionary_offset = std::distance(_dictionary->begin(), dictionary_value_it);
+      (*_attribute_vector)[cell_id] = static_cast<uint32_t>(dictionary_offset);
+    }
+  }
 
   // return the value at a certain position. If you want to write efficient operators, back off!
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
@@ -87,7 +109,7 @@ class DictionarySegment : public BaseSegment {
   ChunkOffset size() const override { return static_cast<ChunkOffset>(_attribute_vector->size()); }
 
   // returns the calculated memory usage
-  size_t estimate_memory_usage() const final;
+  size_t estimate_memory_usage() const final { return 0; }
 
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
