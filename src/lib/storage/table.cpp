@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "dictionary_segment.hpp"
 #include "value_segment.hpp"
 
 #include "resolve_type.hpp"
@@ -79,6 +80,23 @@ void Table::_add_value_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std
   });
 }
 
-void Table::compress_chunk(ChunkID chunk_id) { throw std::runtime_error("Implement Table::compress_chunk"); }
+void Table::_add_dictionary_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type,
+                                             const std::shared_ptr<BaseSegment>& value_segment) {
+  resolve_data_type(type, [&](const auto data_type_t) {
+    using ColumnDataType = typename decltype(data_type_t)::type;
+    const auto dictionary_segment = std::make_shared<DictionarySegment<ColumnDataType>>(value_segment);
+    chunk->add_segment(dictionary_segment);
+  });
+}
+
+void Table::compress_chunk(ChunkID chunk_id) {
+  auto compressed_chunk = std::make_shared<Chunk>();
+  const auto& chunk = get_chunk(chunk_id);
+  const auto chunk_column_count = chunk.column_count();
+  for (auto column = 0; column < chunk_column_count; column++) {
+    const auto segment_type = _column_types[column];
+    _add_dictionary_segment_to_chunk(compressed_chunk, segment_type, chunk.get_segment(ColumnID{column}));
+  }
+}
 
 }  // namespace opossum

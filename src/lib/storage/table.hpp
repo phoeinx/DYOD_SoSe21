@@ -81,5 +81,7 @@ class Table : private Noncopyable {
   std::vector<std::string> _column_types;
 
   void _add_value_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type);
+  void _add_dictionary_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type,
+                                        const std::shared_ptr<BaseSegment>& value_segment);
 };
 }  // namespace opossum
