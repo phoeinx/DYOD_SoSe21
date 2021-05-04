@@ -1,0 +1,26 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: ./install_dependencies.sh
+      env: 
+        OPOSSUM_HEADLESS_SETUP: FALSE
+    - name: configure
+      run: mkdir cmake-build-debug && cd cmake-build-debug && cmake ..
+    - name: make
+      run: cd cmake-build-debug && make -j4 hyriseTest
+    - name: Run Test
+      run: ./hyriseTest
