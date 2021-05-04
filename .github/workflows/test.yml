@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Test
 
 on:
   push:
@@ -9,7 +9,10 @@ on:
 jobs:
   test:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest]
 
     steps:
     - name: Checkout repository
@@ -17,7 +20,7 @@ jobs:
     - name: Install Dependencies
       run: ./install_dependencies.sh
       env: 
-        OPOSSUM_HEADLESS_SETUP: FALSE
+        OPOSSUM_HEADLESS_SETUP: TRUE
     - name: Create Build Directory and CMakeFiles
       run: mkdir cmake-build-debug && cd cmake-build-debug && cmake ..
     - name: Make
