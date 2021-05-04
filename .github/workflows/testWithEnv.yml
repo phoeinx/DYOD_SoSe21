@@ -23,4 +23,4 @@ jobs:
     - name: Make
       run: cd cmake-build-debug && make -j4 hyriseTest
     - name: Run Tests
-      run: ls && ./hyriseTest
+      run: ./cmake-build-debug/hyriseTest
