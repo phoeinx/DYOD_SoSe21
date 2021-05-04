@@ -18,9 +18,9 @@ jobs:
       run: ./install_dependencies.sh
       env: 
         OPOSSUM_HEADLESS_SETUP: FALSE
-    - name: configure
+    - name: Create Build Directory and CMakeFiles
       run: mkdir cmake-build-debug && cd cmake-build-debug && cmake ..
-    - name: make
+    - name: Make
       run: cd cmake-build-debug && make -j4 hyriseTest
-    - name: Run Test
-      run: ./hyriseTest
+    - name: Run Tests
+      run: ls && ./hyriseTest
