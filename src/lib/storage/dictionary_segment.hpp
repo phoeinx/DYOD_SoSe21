@@ -31,7 +31,6 @@ class DictionarySegment : public BaseSegment {
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
     const auto segment_size = base_segment->size();
     _dictionary = std::make_shared<std::vector<T>>(segment_size);
-    _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>();
 
     for (auto cell_id = 0u; cell_id < segment_size; ++cell_id) {
       (*_dictionary)[cell_id] = type_cast<T>((*base_segment)[cell_id]);
@@ -41,6 +40,19 @@ class DictionarySegment : public BaseSegment {
 
     auto last = std::unique(_dictionary->begin(), _dictionary->end());
     _dictionary->erase(last, _dictionary->end());
+
+    auto dictionary_size = _dictionary->size();
+
+    auto required_bit_size = std::ceil(std::log(dictionary_size)/std::log(2));
+
+    // Werte < 8 etc. versuchen durch 2^ceil(log(required_bit_size)) auf 8, 16, 32
+    if (required_bit_size <= 8){
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(segment_size);
+    } else if (required_bit_size <= 16){
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint16_t>>(segment_size);
+    } else {
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>(segment_size);
+    }
 
     for (auto cell_id = 0u; cell_id < segment_size; ++cell_id) {
       const auto value = type_cast<T>((*base_segment)[cell_id]);

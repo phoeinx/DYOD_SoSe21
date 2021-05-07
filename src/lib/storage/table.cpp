@@ -6,6 +6,7 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -97,7 +98,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
   const auto chunk_column_count = chunk.column_count();
   for (auto column = 0; column < chunk_column_count; column++) {
     const auto segment_type = _column_types[column];
-    _add_dictionary_segment_to_chunk(compressed_chunk, segment_type, chunk.get_segment(static_cast<ColumnID>(column)));
+    std::thread thread(_add_dictionary_segment_to_chunk,compressed_chunk, segment_type, chunk.get_segment(static_cast<ColumnID>(column));
   }
   _chunks[chunk_id] = compressed_chunk;
 }

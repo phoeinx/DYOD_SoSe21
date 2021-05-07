@@ -11,8 +11,10 @@ namespace opossum {
 template <typename T>
 class FixedSizeAttributeVector : public BaseAttributeVector {
  public:
-  //FixedSizeAttributeVector(size_t attribute_vector_size) : _attributes(attribute_vector_size){};
-  FixedSizeAttributeVector() = default;
+  FixedSizeAttributeVector(size_t attribute_vector_size){
+    _attributes = std::vector<T>(attribute_vector_size);
+  }
+  //FixedSizeAttributeVector() = default;
   virtual ~FixedSizeAttributeVector() = default;
 
   // we need to explicitly set the move constructor to default when
