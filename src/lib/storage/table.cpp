@@ -32,26 +32,28 @@ void Table::add_column(const std::string& name, const std::string& type) {
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {
-  auto last_chunk = _chunks[chunk_count() - 1];
-  if (last_chunk->size() == _target_chunk_size) {
-    last_chunk = std::make_shared<Chunk>();
+  if (_chunks.back()->size() == _target_chunk_size) {
+    auto new_chunk = std::make_shared<Chunk>();
     for (auto column_type : _column_types) {
-      _add_value_segment_to_chunk(last_chunk, column_type);
+      _add_value_segment_to_chunk(new_chunk, column_type);
     }
-    _chunks.push_back(last_chunk);
+    _chunks.push_back(new_chunk);
   }
-  last_chunk->append(values);
+
+  _chunks.back()->append(values);
 }
 
 ColumnCount Table::column_count() const { return _chunks[0]->column_count(); }
 
 uint64_t Table::row_count() const {
-  const auto completed_chunks_size = (chunk_count() - 1) * _target_chunk_size;
-  const auto last_chunk_size = _chunks[chunk_count() - 1]->size();
-  return completed_chunks_size + last_chunk_size;
+  uint64_t row_count = 0;
+  for (const auto &chunk : _chunks) {
+    row_count = row_count + chunk->size();
+  }
+  return row_count;
 }
 
-ChunkID Table::chunk_count() const { return ChunkID{_chunks.size()}; }
+ChunkID Table::chunk_count() const { return static_cast<ChunkID>(_chunks.size()); }
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
   const auto it = std::find(_column_names.begin(), _column_names.end(), column_name);
@@ -95,7 +97,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
   const auto chunk_column_count = chunk.column_count();
   for (auto column = 0; column < chunk_column_count; column++) {
     const auto segment_type = _column_types[column];
-    _add_dictionary_segment_to_chunk(compressed_chunk, segment_type, chunk.get_segment(ColumnID{column}));
+    _add_dictionary_segment_to_chunk(compressed_chunk, segment_type, chunk.get_segment(static_cast<ColumnID>(column)));
   }
 }
 

@@ -1,6 +1,5 @@
 #include "storage_manager.hpp"
 
-#include <iostream>
 #include <memory>
 #include <string>
 #include <utility>
@@ -30,7 +29,8 @@ std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const 
 bool StorageManager::has_table(const std::string& name) const { return _tables.contains(name); }
 
 std::vector<std::string> StorageManager::table_names() const {
-  auto table_names = std::vector<std::string>();
+  std::vector<std::string> table_names;
+  table_names.reserve(_tables.size());
   for (const auto& [table_name, table] : _tables) {
     table_names.push_back(table_name);
   }

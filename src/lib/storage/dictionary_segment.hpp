@@ -65,7 +65,7 @@ class DictionarySegment : public BaseSegment {
   std::shared_ptr<const std::vector<T>> dictionary() const { return _dictionary; }
 
   // returns the attribute vector
-  std::shared_ptr<const BaseAttributeVector> attribute_vector() const { return _attribute_vector; }
+  //std::shared_ptr<const BaseAttributeVector> attribute_vector() const { return _attribute_vector; }
 
   // return the value represented by a given ValueID
   const T& value_by_value_id(ValueID value_id) { return _dictionary->at(value_id); }
@@ -77,7 +77,7 @@ class DictionarySegment : public BaseSegment {
     if (lower_bound_it == _dictionary->end()) {
       return INVALID_VALUE_ID;
     }
-    return ValueID{std::distance(_dictionary->begin(), lower_bound_it)};
+    return static_cast<ValueID>(std::distance(_dictionary->begin(), lower_bound_it));
   }
 
   // same as lower_bound(T), but accepts an AllTypeVariant
@@ -93,7 +93,7 @@ class DictionarySegment : public BaseSegment {
     if (upper_bound_it == _dictionary->end()) {
       return INVALID_VALUE_ID;
     }
-    return ValueID{std::distance(_dictionary->begin(), upper_bound_it)};
+    return static_cast<ValueID>(std::distance(_dictionary->begin(), upper_bound_it));
   }
 
   // same as upper_bound(T), but accepts an AllTypeVariant
