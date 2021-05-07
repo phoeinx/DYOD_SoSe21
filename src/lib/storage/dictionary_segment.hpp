@@ -10,6 +10,7 @@
 #include "all_type_variant.hpp"
 #include "type_cast.hpp"
 #include "types.hpp"
+#include "fixed_size_attribute_vector.hpp"
 
 namespace opossum {
 
@@ -30,7 +31,7 @@ class DictionarySegment : public BaseSegment {
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
     const auto segment_size = base_segment->size();
     _dictionary = std::make_shared<std::vector<T>>(segment_size);
-    _attribute_vector = std::make_shared<std::vector<uint32_t>>(segment_size);
+    _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>();
 
     for (auto cell_id = 0u; cell_id < segment_size; ++cell_id) {
       (*_dictionary)[cell_id] = type_cast<T>((*base_segment)[cell_id]);
@@ -45,18 +46,18 @@ class DictionarySegment : public BaseSegment {
       const auto value = type_cast<T>((*base_segment)[cell_id]);
       const auto dictionary_value_it = std::lower_bound(_dictionary->begin(), _dictionary->end(), value);
       const auto dictionary_offset = std::distance(_dictionary->begin(), dictionary_value_it);
-      (*_attribute_vector)[cell_id] = static_cast<uint32_t>(dictionary_offset);
+      (*_attribute_vector).set(cell_id, static_cast<ValueID>(dictionary_offset));
     }
   }
 
   // return the value at a certain position. If you want to write efficient operators, back off!
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
-    const auto dictionary_value = _dictionary->at(_attribute_vector->at(chunk_offset));
+    const auto dictionary_value = _dictionary->at(_attribute_vector->get(chunk_offset));
     return static_cast<AllTypeVariant>(dictionary_value);
   }
 
   // return the value at a certain position.
-  T get(const size_t chunk_offset) const { return _dictionary->at(_attribute_vector->at(chunk_offset)); }
+  T get(const size_t chunk_offset) const { return _dictionary->at(_attribute_vector->get(chunk_offset)); }
 
   // dictionary segments are immutable
   void append(const AllTypeVariant& val) override { throw std::runtime_error("Cannot append to immutable segments"); }
@@ -65,7 +66,7 @@ class DictionarySegment : public BaseSegment {
   std::shared_ptr<const std::vector<T>> dictionary() const { return _dictionary; }
 
   // returns the attribute vector
-  //std::shared_ptr<const BaseAttributeVector> attribute_vector() const { return _attribute_vector; }
+  std::shared_ptr<const BaseAttributeVector> attribute_vector() const { return _attribute_vector; }
 
   // return the value represented by a given ValueID
   const T& value_by_value_id(ValueID value_id) { return _dictionary->at(value_id); }
@@ -113,7 +114,7 @@ class DictionarySegment : public BaseSegment {
 
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
-  std::shared_ptr<std::vector<uint32_t>> _attribute_vector;
+  std::shared_ptr<BaseAttributeVector> _attribute_vector;
 };
 
 }  // namespace opossum
