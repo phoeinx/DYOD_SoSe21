@@ -45,7 +45,8 @@ class DictionarySegment : public BaseSegment {
 
     auto required_bit_size = std::ceil(std::log(dictionary_size)/std::log(2));
 
-    // Werte < 8 etc. versuchen durch 2^ceil(log(required_bit_size)) auf 8, 16, 32
+
+    // Werte < 8 etc. versuchen durch 2^ceil(log(required_bit_size)) auf 8, 16, 32 zu bringen
     if (required_bit_size <= 8){
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(segment_size);
     } else if (required_bit_size <= 16){
@@ -122,7 +123,9 @@ class DictionarySegment : public BaseSegment {
   ChunkOffset size() const override { return static_cast<ChunkOffset>(_attribute_vector->size()); }
 
   // returns the calculated memory usage
-  size_t estimate_memory_usage() const final { return 0; }
+  size_t estimate_memory_usage() const final {
+    return (sizeof(T) * _dictionary->size() + _attribute_vector->width() * _attribute_vector->size());
+  }
 
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
