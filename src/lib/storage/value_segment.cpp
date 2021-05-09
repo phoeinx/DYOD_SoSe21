@@ -34,7 +34,7 @@ const std::vector<T>& ValueSegment<T>::values() const {
 
 template <typename T>
 size_t ValueSegment<T>::estimate_memory_usage() const {
-  return (sizeof(T)*_values.size());
+  return (sizeof(T) * _values.size());
 }
 
 EXPLICITLY_INSTANTIATE_DATA_TYPES(ValueSegment);

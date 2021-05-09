@@ -65,7 +65,49 @@ TEST_F(StorageDictionarySegmentTest, LowerUpperBound) {
   EXPECT_EQ(dict_col->upper_bound(15), opossum::INVALID_VALUE_ID);
 }
 
-// TODO(student): You should add some more tests here (full coverage would be appreciated) and possibly in other files.
+TEST_F(StorageDictionarySegmentTest, UseFixedSizeAttributeVector) {
+  for (int i = 0; i < 200; i += 1) vc_int->append(i);
+
+  std::shared_ptr<BaseSegment> col;
+  resolve_data_type("int", [&](auto type) {
+    using Type = typename decltype(type)::type;
+    col = std::make_shared<DictionarySegment<Type>>(vc_int);
+  });
+  auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
+
+  auto attribute_vector = dict_col->attribute_vector();
+
+  EXPECT_EQ(attribute_vector->width(), 1);
+
+  // adding 100 more entries means that a uint16_t is necessary
+  for (int i = 200; i < 301; i += 1) vc_int->append(i);
+
+  std::shared_ptr<BaseSegment> col_2;
+  resolve_data_type("int", [&](auto type) {
+    using Type = typename decltype(type)::type;
+    col_2 = std::make_shared<DictionarySegment<Type>>(vc_int);
+  });
+  auto dict_col_2 = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col_2);
+
+  auto attribute_vector_2 = dict_col_2->attribute_vector();
+
+  EXPECT_EQ(attribute_vector_2->width(), 2);
+
+  // adding 66_000 more entries means that a uint32_t is necessary
+  for (int i = 301; i < 66000; i += 1) vc_int->append(i);
+
+  std::shared_ptr<BaseSegment> col_3;
+  resolve_data_type("int", [&](auto type) {
+    using Type = typename decltype(type)::type;
+    col_3 = std::make_shared<DictionarySegment<Type>>(vc_int);
+  });
+  auto dict_col_3 = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col_3);
+
+  auto attribute_vector_3 = dict_col_3->attribute_vector();
+
+  EXPECT_EQ(attribute_vector_3->width(), 4);
+
+}
 
 TEST_F(StorageDictionarySegmentTest, MemoryEstimation) {
   for (int i = 0; i < 300; i += 1) vc_int->append(i);
@@ -75,12 +117,64 @@ TEST_F(StorageDictionarySegmentTest, MemoryEstimation) {
     using Type = typename decltype(type)::type;
     col = std::make_shared<DictionarySegment<Type>>(vc_int);
   });
-  auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
+  auto dict_col_int = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
 
   // 300 elements with 4 bytes (byte size of an int) per element for the value segment
   EXPECT_EQ(vc_int->estimate_memory_usage(), 1200);
 
   // 300 elements * 4 byte per int from the dictionary + 300 elements * 2 byte (uint16_t) from the attribute vector
-  EXPECT_EQ(dict_col->estimate_memory_usage(), 1800);
+  EXPECT_EQ(dict_col_int->estimate_memory_usage(), 1800);
+
+  vc_str->append("Bill");
+  vc_str->append("Steve");
+  vc_str->append("Alexander");
+  vc_str->append("Steve");
+  vc_str->append("Hasso");
+  vc_str->append("Bill");
+
+  std::shared_ptr<BaseSegment> col_2;
+  resolve_data_type("string", [&](auto type) {
+    using Type = typename decltype(type)::type;
+    col_2 = std::make_shared<DictionarySegment<Type>>(vc_str);
+  });
+  auto dict_col_str = std::dynamic_pointer_cast<opossum::DictionarySegment<std::string>>(col_2);
+
+  // should be smaller, since we reduced number of strings we need to store
+  EXPECT_EQ(vc_str->estimate_memory_usage() > dict_col_str->estimate_memory_usage(), true);
 }
+
+TEST_F(StorageDictionarySegmentTest, MemoryEstimation2) {
+  for (int i = 0; i < 300; i += 1) vc_int->append(i);
+
+  std::shared_ptr<BaseSegment> col;
+  resolve_data_type("int", [&](auto type) {
+    using Type = typename decltype(type)::type;
+    col = std::make_shared<DictionarySegment<Type>>(vc_int);
+  });
+  auto dict_col_int = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
+
+  // 300 elements with 4 bytes (byte size of an int) per element for the value segment
+  EXPECT_EQ(vc_int->estimate_memory_usage(), 1200);
+
+  // 300 elements * 4 byte per int from the dictionary + 300 elements * 2 byte (uint16_t) from the attribute vector
+  EXPECT_EQ(dict_col_int->estimate_memory_usage(), 1800);
+
+  vc_str->append("Bill");
+  vc_str->append("Steve");
+  vc_str->append("Alexander");
+  vc_str->append("Steve");
+  vc_str->append("Hasso");
+  vc_str->append("Bill");
+
+  std::shared_ptr<BaseSegment> col_2;
+  resolve_data_type("string", [&](auto type) {
+    using Type = typename decltype(type)::type;
+    col_2 = std::make_shared<DictionarySegment<Type>>(vc_str);
+  });
+  auto dict_col_str = std::dynamic_pointer_cast<opossum::DictionarySegment<std::string>>(col_2);
+
+  // should be smaller, since we reduced number of strings we need to store
+  EXPECT_EQ(vc_str->estimate_memory_usage() > dict_col_str->estimate_memory_usage(), true);
+}
+
 }  // namespace opossum

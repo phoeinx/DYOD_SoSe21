@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "all_type_variant.hpp"
+#include "fixed_size_attribute_vector.hpp"
 #include "type_cast.hpp"
 #include "types.hpp"
-#include "fixed_size_attribute_vector.hpp"
 
 namespace opossum {
 
@@ -43,13 +43,12 @@ class DictionarySegment : public BaseSegment {
 
     auto dictionary_size = _dictionary->size();
 
-    auto required_bit_size = std::ceil(std::log(dictionary_size)/std::log(2));
-
+    auto required_bit_size = std::ceil(std::log(dictionary_size) / std::log(2));
 
     // Werte < 8 etc. versuchen durch 2^ceil(log(required_bit_size)) auf 8, 16, 32 zu bringen
-    if (required_bit_size <= 8){
+    if (required_bit_size <= 8) {
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(segment_size);
-    } else if (required_bit_size <= 16){
+    } else if (required_bit_size <= 16) {
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint16_t>>(segment_size);
     } else {
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>(segment_size);
