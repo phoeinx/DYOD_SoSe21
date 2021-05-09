@@ -87,33 +87,42 @@ TEST_F(StorageTableTest, GetColumnIdByName) {
 TEST_F(StorageTableTest, GetChunkSize) { EXPECT_EQ(t.target_chunk_size(), 2u); }
 
 TEST_F(StorageTableTest, EmplaceChunk) {
-  // auto int_value_segment = std::make_shared<ValueSegment<int32_t>>();
-  // int_value_segment->append(4);
-  // int_value_segment->append(6);
-  // int_value_segment->append(3);
+  auto int_value_segment = std::make_shared<ValueSegment<int32_t>>();
+  int_value_segment->append(4);
+  int_value_segment->append(6);
+  int_value_segment->append(3);
 
-  // auto string_value_segment = std::make_shared<ValueSegment<std::string>>();
-  // string_value_segment->append("Hello,");
-  // string_value_segment->append("world");
-  // string_value_segment->append("!");
+  auto string_value_segment = std::make_shared<ValueSegment<std::string>>();
+  string_value_segment->append("Hello,");
+  string_value_segment->append("world");
+  string_value_segment->append("!");
 
-  // Chunk c;
+  Chunk c;
 
-  // c.add_segment(int_value_segment);
-  // c.add_segment(string_value_segment);
+  c.add_segment(int_value_segment);
 
-  // construct a chunk
-  // emplace chunk -> error because wrong number of columns
-  // add columns to table
-  // emplace chunk -> should replace current chunk -> number chunks == 1
-  // append
-  // append
-  // emplace chunk -> append chunk => number chunks >= 2 (depends on appends earlier)
-  // test whether row size is correct!
+  // error because wrong number of columns
+  EXPECT_THROW(t.emplace_chunk(std::move(c)), std::exception);
 
-  // test whether false number of columns results in error
-  // emplace chunk when first chunk is empty
-  // emplace chunk when we already have written chunks
+  Chunk c2;
+  c2.add_segment(int_value_segment);
+  c2.add_segment(string_value_segment);
+  EXPECT_EQ(t.chunk_count(), 1u);
+  t.emplace_chunk(std::move(c2));
+  EXPECT_EQ(t.chunk_count(), 1u);
+
+  t.append({4, "Hello,"});
+  t.append({6, "world"});
+  t.append({3, "!"});
+  EXPECT_EQ(t.chunk_count(), 3u);
+  EXPECT_EQ(t.row_count(), 6u);
+
+  Chunk c3;
+  c3.add_segment(int_value_segment);
+  c3.add_segment(string_value_segment);
+  t.emplace_chunk(std::move(c3));
+  EXPECT_EQ(t.chunk_count(), 4u);
+  EXPECT_EQ(t.row_count(), 9u);
 }
 
 TEST_F(StorageTableTest, CompressChunk) {

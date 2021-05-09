@@ -33,7 +33,7 @@ void Table::add_column(const std::string& name, const std::string& type) {
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {
-  if (_chunks.back()->size() == _target_chunk_size) {
+  if (_chunks.back()->size() >= _target_chunk_size) {
     auto new_chunk = std::make_shared<Chunk>();
     for (auto column_type : _column_types) {
       _add_value_segment_to_chunk(new_chunk, column_type);
@@ -74,6 +74,16 @@ const std::string& Table::column_type(const ColumnID column_id) const { return _
 Chunk& Table::get_chunk(ChunkID chunk_id) { return *_chunks.at(chunk_id); }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return *_chunks.at(chunk_id); }
+
+void Table::emplace_chunk(Chunk chunk) {
+  Assert(chunk.column_count() == column_count(), "Columns in table and chunk have to match up");
+
+  if (chunk_count() == 1 && row_count() == 0) {
+    _chunks[0] = std::make_shared<Chunk>(std::move(chunk));
+  } else {
+    _chunks.emplace_back(std::make_shared<Chunk>(std::move(chunk)));
+  }
+}
 
 void Table::_add_value_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type) {
   resolve_data_type(type, [&](const auto data_type_t) {
