@@ -26,7 +26,7 @@ class FixedSizeAttributeVector : public BaseAttributeVector {
 
   // sets the value id at a given position
   void set(const size_t position, const ValueID value_id) {
-    DebugAssert(position >= 0 && position < _attributes.size(), "Not a valid position");
+    DebugAssert(position >= 0 && position < _attributes.size(), "Cannot set value at invalid position");
     _attributes[position] = static_cast<T>(value_id);
   }
 

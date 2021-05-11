@@ -37,15 +37,15 @@ class DictionarySegment : public BaseSegment {
     }
 
     std::sort(_dictionary->begin(), _dictionary->end());
-
-    auto first_duplicate_element = std::unique(_dictionary->begin(), _dictionary->end());
+    const auto first_duplicate_element = std::unique(_dictionary->begin(), _dictionary->end());
     _dictionary->erase(first_duplicate_element, _dictionary->end());
     _dictionary->shrink_to_fit();
 
-    auto dictionary_size = _dictionary->size();
+    const auto dictionary_size = _dictionary->size();
 
-    // Calculate appropriate width for attribute vector by finding the number of bits needed to store the maximum valueID
-    auto required_bit_size = std::ceil(std::log(dictionary_size) / std::log(2));
+    // Calculate appropriate width for attribute vector
+    // by finding the number of bits needed to store the maximum valueID
+    const auto required_bit_size = std::ceil(std::log(dictionary_size) / std::log(2));
 
     if (required_bit_size <= 8) {
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(segment_size);
@@ -57,18 +57,19 @@ class DictionarySegment : public BaseSegment {
 
     for (auto cell_id = 0u; cell_id < segment_size; ++cell_id) {
       const auto value = type_cast<T>((*base_segment)[cell_id]);
-      const auto dictionary_offset = std::distance(_dictionary->begin(), std::lower_bound(_dictionary->begin(), _dictionary->end(), value));
+      const auto dictionary_offset =
+          std::distance(_dictionary->cbegin(), std::lower_bound(_dictionary->cbegin(), _dictionary->cend(), value));
       (*_attribute_vector).set(cell_id, static_cast<ValueID>(dictionary_offset));
     }
   }
 
-  // return the value at a certain position. If you want to write efficient operators, back off!
+  // returns the value at a certain position. If you want to write efficient operators, back off!
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
     const auto dictionary_value = _dictionary->at(_attribute_vector->get(chunk_offset));
     return static_cast<AllTypeVariant>(dictionary_value);
   }
 
-  // return the value at a certain position.
+  // returns the value at a certain position.
   T get(const size_t chunk_offset) const { return _dictionary->at(_attribute_vector->get(chunk_offset)); }
 
   // dictionary segments are immutable
@@ -80,17 +81,17 @@ class DictionarySegment : public BaseSegment {
   // returns the attribute vector
   std::shared_ptr<const BaseAttributeVector> attribute_vector() const { return _attribute_vector; }
 
-  // return the value represented by a given ValueID
+  // returns the value represented by a given ValueID
   const T& value_by_value_id(ValueID value_id) { return _dictionary->at(value_id); }
 
   // returns the first value ID that refers to a value >= the search value
   // returns INVALID_VALUE_ID if all values are smaller than the search value
   ValueID lower_bound(T value) const {
-    const auto lower_bound_it = std::lower_bound(_dictionary->begin(), _dictionary->end(), value);
+    const auto lower_bound_it = std::lower_bound(_dictionary->cbegin(), _dictionary->cend(), value);
     if (lower_bound_it == _dictionary->end()) {
       return INVALID_VALUE_ID;
     }
-    return static_cast<ValueID>(std::distance(_dictionary->begin(), lower_bound_it));
+    return static_cast<ValueID>(std::distance(_dictionary->cbegin(), lower_bound_it));
   }
 
   // same as lower_bound(T), but accepts an AllTypeVariant

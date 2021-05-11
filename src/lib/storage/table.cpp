@@ -47,20 +47,17 @@ void Table::append(const std::vector<AllTypeVariant>& values) {
 ColumnCount Table::column_count() const { return _chunks[0]->column_count(); }
 
 uint64_t Table::row_count() const {
-  uint64_t row_count = 0;
-  for (const auto& chunk : _chunks) {
-    row_count = row_count + chunk->size();
-  }
-  return row_count;
+  return std::accumulate(_chunks.cbegin(), _chunks.cend(), 0,
+                         [](uint64_t accumulated_size, const auto& chunk) { return accumulated_size + chunk->size(); });
 }
 
 ChunkID Table::chunk_count() const { return static_cast<ChunkID>(_chunks.size()); }
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
-  const auto it = std::find(_column_names.begin(), _column_names.end(), column_name);
+  const auto it = std::find(_column_names.cbegin(), _column_names.cend(), column_name);
   Assert(it != _column_names.end(), "Column not found");
 
-  return static_cast<ColumnID>(std::distance(_column_names.begin(), it));
+  return static_cast<ColumnID>(std::distance(_column_names.cbegin(), it));
 }
 
 ChunkOffset Table::target_chunk_size() const { return _target_chunk_size; }
@@ -116,9 +113,11 @@ void Table::compress_chunk(ChunkID chunk_id) {
     threads.emplace_back(
         std::thread(&Table::_add_dictionary_segment_to_chunk, this, std::ref(compressed_chunk), segment_type, segment));
   }
-  for (auto index = 0ul, number_threads = threads.size(); index < number_threads; index++) {
-    threads[index].join();
+
+  for (auto& thread : threads) {
+    thread.join();
   }
+
   _chunks[chunk_id] = compressed_chunk;
 }
 
