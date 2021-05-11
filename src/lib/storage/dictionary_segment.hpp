@@ -38,14 +38,15 @@ class DictionarySegment : public BaseSegment {
 
     std::sort(_dictionary->begin(), _dictionary->end());
 
-    auto last = std::unique(_dictionary->begin(), _dictionary->end());
-    _dictionary->erase(last, _dictionary->end());
+    auto first_duplicate_element = std::unique(_dictionary->begin(), _dictionary->end());
+    _dictionary->erase(first_duplicate_element, _dictionary->end());
+    _dictionary->shrink_to_fit();
 
     auto dictionary_size = _dictionary->size();
 
+    // Calculate appropriate width for attribute vector by finding the number of bits needed to store the maximum valueID
     auto required_bit_size = std::ceil(std::log(dictionary_size) / std::log(2));
 
-    // Werte < 8 etc. versuchen durch 2^ceil(log(required_bit_size)) auf 8, 16, 32 zu bringen
     if (required_bit_size <= 8) {
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(segment_size);
     } else if (required_bit_size <= 16) {
@@ -56,8 +57,7 @@ class DictionarySegment : public BaseSegment {
 
     for (auto cell_id = 0u; cell_id < segment_size; ++cell_id) {
       const auto value = type_cast<T>((*base_segment)[cell_id]);
-      const auto dictionary_value_it = std::lower_bound(_dictionary->begin(), _dictionary->end(), value);
-      const auto dictionary_offset = std::distance(_dictionary->begin(), dictionary_value_it);
+      const auto dictionary_offset = std::distance(_dictionary->begin(), std::lower_bound(_dictionary->begin(), _dictionary->end(), value));
       (*_attribute_vector).set(cell_id, static_cast<ValueID>(dictionary_offset));
     }
   }

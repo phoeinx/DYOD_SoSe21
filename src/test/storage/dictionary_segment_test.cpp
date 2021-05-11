@@ -156,4 +156,18 @@ TEST_F(StorageDictionarySegmentTest, AppendRow) {
   EXPECT_THROW(dict_col_int->append(value), std::exception);
 }
 
+TEST_F(StorageDictionarySegmentTest, GetValueByValueId) {
+  for (int i = 0; i < 10; i += 1) vc_int->append(i);
+
+  std::shared_ptr<BaseSegment> col;
+  resolve_data_type("int", [&](auto type) {
+    using Type = typename decltype(type)::type;
+    col = std::make_shared<DictionarySegment<Type>>(vc_int);
+  });
+  auto dict_col_int = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
+
+  EXPECT_EQ(dict_col_int->value_by_value_id(static_cast<ValueID>(5)), 5);
+  EXPECT_NE(dict_col_int->value_by_value_id(static_cast<ValueID>(7)), 8);
+}
+
 }  // namespace opossum
