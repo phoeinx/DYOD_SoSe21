@@ -48,6 +48,10 @@ TEST_F(StorageDictionarySegmentTest, CompressStringSegment) {
   EXPECT_EQ(dict_col->get(0), "Bill");
   EXPECT_EQ(dict_col->get(5), "Bill");
   EXPECT_THROW(dict_col->get(6), std::exception);
+
+  EXPECT_EQ((*dict_col)[0], static_cast<AllTypeVariant>("Bill"));
+  EXPECT_EQ((*dict_col)[5], static_cast<AllTypeVariant>("Bill"));
+  EXPECT_THROW((*dict_col)[6], std::exception);
 }
 
 TEST_F(StorageDictionarySegmentTest, LowerUpperBound) {
