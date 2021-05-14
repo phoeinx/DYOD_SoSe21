@@ -103,6 +103,7 @@ void Table::_add_dictionary_segment_to_chunk(std::shared_ptr<Chunk>& chunk, cons
   resolve_data_type(type, [&](const auto data_type_t) {
     using ColumnDataType = typename decltype(data_type_t)::type;
     const auto dictionary_segment = std::make_shared<DictionarySegment<ColumnDataType>>(value_segment);
+    std::lock_guard<std::mutex> guard(_add_segment_lock);
     chunk->add_segment(dictionary_segment);
   });
 }
