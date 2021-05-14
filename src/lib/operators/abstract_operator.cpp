@@ -17,10 +17,13 @@ AbstractOperator::AbstractOperator(const std::shared_ptr<const AbstractOperator>
 void AbstractOperator::execute() { _output = _on_execute(); }
 
 std::shared_ptr<const Table> AbstractOperator::get_output() const {
-  // TODO(anyone): You should place some meaningful checks here
-
+  Assert(_output != nullptr, "Output table has to be calculated but was null pointer");
   return _output;
 }
+
+std::shared_ptr<const AbstractOperator> AbstractOperator::left_input() const { return _left_input; }
+
+std::shared_ptr<const AbstractOperator> AbstractOperator::right_input() const { return _right_input; }
 
 std::shared_ptr<const Table> AbstractOperator::_left_input_table() const { return _left_input->get_output(); }
 
