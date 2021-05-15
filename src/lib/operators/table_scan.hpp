@@ -96,7 +96,7 @@ class TableScan : public AbstractOperator {
       }
     }
     return _return;
-  };
+  }
   ColumnID _column_id;
   ScanType _scan_type;
   AllTypeVariant _search_value;
