@@ -79,26 +79,28 @@ class TableScan : public AbstractOperator {
 
     return resulting_table;
   };
+
+  template <typename T>
+  std::function<bool(T, T)> get_comparator(ScanType type) {
+    std::function<bool(T, T)> _return = [](auto left, auto right) { return left == right; };
+
+    switch (type) {
+      case ScanType::OpEquals: {
+        _return = [](auto left, auto right) { return left == right; };
+      }
+      case ScanType::OpNotEquals: {
+        _return = [](auto left, auto right) { return left != right; };
+      }
+      default: {
+        _return = [](auto left, auto right) { return left != right; };
+      }
+    }
+    return _return;
+  };
   ColumnID _column_id;
   ScanType _scan_type;
   AllTypeVariant _search_value;
 };
-template <typename T>
-auto get_comparator(ScanType type) {
-  std::function<bool(T, T)> _return = [](auto left, auto right) { return left == right; };
 
-  switch (type) {
-    case ScanType::OpEquals: {
-      _return = [](auto left, auto right) { return left == right; };
-    }
-    case ScanType::OpNotEquals: {
-      _return = [](auto left, auto right) { return left != right; };
-    }
-    default: {
-      _return = [](auto left, auto right) { return left != right; };
-    }
-  }
-  return _return;
-};
 
 }  // namespace opossum
