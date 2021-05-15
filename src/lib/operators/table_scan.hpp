@@ -42,7 +42,7 @@ class TableScan : public AbstractOperator {
         const auto typed_value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
         if (typed_value_segment != nullptr) {
           std::vector<Type> values = typed_value_segment->values();
-          auto comparator = get_comparator<Type>(_scan_type);
+          auto comparator = _get_comparator<Type>(_scan_type);
 
           for (auto cell_id = 0ul, typed_segment_size = values.size(); cell_id < typed_segment_size; ++cell_id) {
             if (comparator(values[cell_id], typed_search_value)) {
@@ -52,7 +52,7 @@ class TableScan : public AbstractOperator {
         }
         else {
           // TODO: Fix error in get_comparator call
-          auto dictionary_comparator = get_comparator<int>(_scan_type);
+          auto dictionary_comparator = _get_comparator<int>(_scan_type);
           const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment);
           auto values = typed_dictionary_segment->attribute_vector();
           auto search_value_id = typed_dictionary_segment->lower_bound(typed_search_value);
@@ -81,7 +81,7 @@ class TableScan : public AbstractOperator {
   };
 
   template <typename T>
-  std::function<bool(T, T)> get_comparator(ScanType type) {
+  std::function<bool(T, T)> _get_comparator(ScanType type) {
     std::function<bool(T, T)> _return = [](auto left, auto right) { return left == right; };
 
     switch (type) {
