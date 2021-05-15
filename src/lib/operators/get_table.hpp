@@ -14,15 +14,10 @@ class GetTable : public AbstractOperator {
  public:
   explicit GetTable(const std::string& name) : _table_name(name) {}
 
-  const std::string& table_name() const {
-    return _table_name; 
-  }
+  const std::string& table_name() const { return _table_name; }
 
  protected:
-  std::shared_ptr<const Table> _on_execute() override {
-    return StorageManager::get().get_table(_table_name);
-  }
+  std::shared_ptr<const Table> _on_execute() override { return StorageManager::get().get_table(_table_name); }
   const std::string _table_name;
 };
 }  // namespace opossum
- 
