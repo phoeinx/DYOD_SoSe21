@@ -19,7 +19,7 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
   // TODO: Create reference segment with position list
   // TODO: Resolve possible indirections over reference segments in input_table
   return _create_reference_output_table(input_table, std::move(position_list), input_table->target_chunk_size(), input_table->column_count());
-};
+}
 
 template <typename T>
 std::function<bool(T, T)> TableScan::_get_comparator(ScanType type) {
@@ -28,12 +28,15 @@ std::function<bool(T, T)> TableScan::_get_comparator(ScanType type) {
   switch (type) {
     case ScanType::OpEquals: {
       _return = [](auto left, auto right) { return left == right; };
+      break;
     }
     case ScanType::OpNotEquals: {
       _return = [](auto left, auto right) { return left != right; };
+      break;
     }
     default: {
       _return = [](auto left, auto right) { return left != right; };
+      break;
     }
   }
   return _return;
