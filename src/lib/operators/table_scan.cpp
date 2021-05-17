@@ -4,7 +4,7 @@ namespace opossum {
 
 TableScan::TableScan(const std::shared_ptr<const AbstractOperator>& in, const ColumnID column_id,
                      const ScanType scan_type, const AllTypeVariant search_value)
-    : AbstractOperator(in), _column_id(column_id), _scan_type(scan_type), _search_value(search_value) {}
+    : AbstractOperator{in}, _column_id(column_id), _scan_type(scan_type), _search_value(search_value) {}
 
 ColumnID TableScan::column_id() const { return _column_id; }
 
@@ -12,13 +12,13 @@ ScanType TableScan::scan_type() const { return _scan_type; }
 
 const AllTypeVariant& TableScan::search_value() const { return _search_value; }
 
-std::shared_ptr<const Table> TableScan::_on_execute() override {
+std::shared_ptr<const Table> TableScan::_on_execute() {
   auto input_table = _left_input_table();
 
   std::vector<RowID> position_list = _create_position_list(input_table);
   // TODO: Create reference segment with position list
   // TODO: Resolve possible indirections over reference segments in input_table
-  return _create_reference_output_table(std::move(position_list), input_table->target_chunk_size(), input_table->column_count());
+  return _create_reference_output_table(input_table, std::move(position_list), input_table->target_chunk_size(), input_table->column_count());
 };
 
 template <typename T>
@@ -39,7 +39,7 @@ std::function<bool(T, T)> TableScan::_get_comparator(ScanType type) {
   return _return;
 }
 
-std::vector<RowID> _create_position_list(std::shared_ptr<const Table>& input_table) {
+std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const Table>& input_table) {
   const auto num_chunks = input_table->chunk_count();
   std::vector<RowID> position_list;
   
@@ -76,10 +76,10 @@ std::vector<RowID> _create_position_list(std::shared_ptr<const Table>& input_tab
   return position_list;
 }
 
-std::shared_ptr<const Table> _create_reference_output_table(std::vector<RowID>& position_list, ChunkOffset target_chunk_size, ColumnCount column_count) {
+std::shared_ptr<const Table> TableScan::_create_reference_output_table(const std::shared_ptr<const Table>& input_table, const std::vector<RowID>& position_list, ChunkOffset target_chunk_size, ColumnCount column_count) {
   Chunk chunk;
   auto ref_position_list = std::make_shared<PosList>(std::move(position_list));
-  auto resulting_table = std::make_shared<Table>(input_table->target_chunk_size());
+  auto resulting_table = std::make_shared<Table>(target_chunk_size);
 
   for (auto current_column_id = static_cast<ColumnCount>(0), columns = input_table->column_count();
        current_column_id < columns; current_column_id++) {

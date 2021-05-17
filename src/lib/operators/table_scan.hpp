@@ -19,7 +19,7 @@ class Table;
 
 class TableScan : public AbstractOperator {
  public:
-  explicit TableScan(const std::shared_ptr<const AbstractOperator>& in, const ColumnID column_id,
+  TableScan(const std::shared_ptr<const AbstractOperator>& in, const ColumnID column_id,
                      const ScanType scan_type, const AllTypeVariant search_value);
 
   ColumnID column_id() const;
@@ -32,7 +32,8 @@ class TableScan : public AbstractOperator {
   template <typename T>
   std::function<bool(T, T)> _get_comparator(ScanType type);
 
-  std::shared_ptr<const Table> _create_reference_output_table(std::vector<RowID>& position_list, ChunkOffset target_chunk_size, ColumnCount column_count);
+  std::shared_ptr<const Table> _create_reference_output_table(const std::shared_ptr<const Table>& input_table, const std::vector<RowID>& position_list, ChunkOffset target_chunk_size, ColumnCount column_count);
+  std::vector<RowID> _create_position_list(const std::shared_ptr<const Table>& input_table);
 
   const ColumnID _column_id;
   const ScanType _scan_type;
