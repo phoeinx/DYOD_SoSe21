@@ -24,6 +24,10 @@ Table::Table(const ChunkOffset target_chunk_size) {
   _chunks.push_back(std::make_shared<Chunk>());
 }
 
+void Table::add_column_definition(const std::string& name, const std::string& type) {
+  // Implementation goes here
+}
+
 void Table::add_column(const std::string& name, const std::string& type) {
   Assert(row_count() == 0, "Cannot add column to non-empty table");
 
@@ -45,6 +49,15 @@ void Table::append(const std::vector<AllTypeVariant>& values) {
 }
 
 ColumnCount Table::column_count() const { return _chunks[0]->column_count(); }
+
+void Table::create_new_chunk() {
+  // Implementation goes here
+}
+
+ColumnCount Table::column_count() const {
+  // Implementation goes here
+  return ColumnCount{0};
+}
 
 uint64_t Table::row_count() const {
   return std::accumulate(_chunks.cbegin(), _chunks.cend(), 0,
