@@ -119,9 +119,8 @@ void Table::compress_chunk(ChunkID chunk_id) {
   for (auto column = 0; column < chunk_column_count; column++) {
     const auto segment_type = _column_types[column];
     auto segment = chunk.get_segment(static_cast<ColumnID>(column));
-
-    threads.emplace_back(
-        std::thread(&Table::_add_dictionary_segment_to_chunk, this, std::ref(compressed_chunk), segment_type, segment));
+    
+    threads.emplace_back(&Table::_add_dictionary_segment_to_chunk, this, std::ref(compressed_chunk), segment_type, segment);
   }
 
   for (auto& thread : threads) {
