@@ -99,10 +99,10 @@ void Table::_add_value_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std
 }
 
 void Table::_add_dictionary_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type,
-                                             const std::shared_ptr<BaseSegment>& value_segment) {
+                                             const std::shared_ptr<BaseSegment>& segment) {
   resolve_data_type(type, [&](const auto data_type_t) {
     using ColumnDataType = typename decltype(data_type_t)::type;
-    const auto dictionary_segment = std::make_shared<DictionarySegment<ColumnDataType>>(value_segment);
+    const auto dictionary_segment = std::make_shared<DictionarySegment<ColumnDataType>>(segment);
     std::lock_guard<std::mutex> guard(_add_segment_lock);
     chunk->add_segment(dictionary_segment);
   });
@@ -114,6 +114,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
   const auto chunk_column_count = chunk.column_count();
 
   std::vector<std::thread> threads;
+  threads.reserve(chunk.size());
 
   for (auto column = 0; column < chunk_column_count; column++) {
     const auto segment_type = _column_types[column];

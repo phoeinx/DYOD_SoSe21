@@ -8,11 +8,11 @@
 
 namespace opossum {
 
-template <typename T>
+template <typename Size>
 class FixedSizeAttributeVector : public BaseAttributeVector {
  public:
   explicit FixedSizeAttributeVector(size_t attribute_vector_size) {
-    _attributes = std::vector<T>(attribute_vector_size);
+    _attributes = std::vector<Size>(attribute_vector_size);
   }
   virtual ~FixedSizeAttributeVector() = default;
 
@@ -27,16 +27,16 @@ class FixedSizeAttributeVector : public BaseAttributeVector {
   // sets the value id at a given position
   void set(const size_t position, const ValueID value_id) {
     DebugAssert(position >= 0 && position < _attributes.size(), "Cannot set value at invalid position");
-    _attributes[position] = static_cast<T>(value_id);
+    _attributes[position] = static_cast<Size>(value_id);
   }
 
   // returns the number of values
   size_t size() const { return _attributes.size(); }
 
   // returns the width of biggest value id in bytes
-  AttributeVectorWidth width() const { return static_cast<AttributeVectorWidth>(sizeof(T)); }
+  AttributeVectorWidth width() const { return static_cast<AttributeVectorWidth>(sizeof(Size)); }
 
  private:
-  std::vector<T> _attributes = {};
+  std::vector<Size> _attributes = {};
 };
 }  // namespace opossum

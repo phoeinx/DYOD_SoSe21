@@ -37,8 +37,8 @@ class DictionarySegment : public BaseSegment {
     }
 
     std::sort(_dictionary->begin(), _dictionary->end());
-    const auto first_duplicate_element = std::unique(_dictionary->begin(), _dictionary->end());
-    _dictionary->erase(first_duplicate_element, _dictionary->end());
+    const auto first_duplicate_element_it = std::unique(_dictionary->begin(), _dictionary->end());
+    _dictionary->erase(first_duplicate_element_it, _dictionary->end());
     _dictionary->shrink_to_fit();
 
     const auto dictionary_size = _dictionary->size();
@@ -65,8 +65,7 @@ class DictionarySegment : public BaseSegment {
 
   // returns the value at a certain position. If you want to write efficient operators, back off!
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
-    const auto dictionary_value = _dictionary->at(_attribute_vector->get(chunk_offset));
-    return static_cast<AllTypeVariant>(dictionary_value);
+    return static_cast<AllTypeVariant>(get(chunk_offset));
   }
 
   // returns the value at a certain position.
