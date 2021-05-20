@@ -54,11 +54,6 @@ void Table::create_new_chunk() {
   // Implementation goes here
 }
 
-ColumnCount Table::column_count() const {
-  // Implementation goes here
-  return ColumnCount{0};
-}
-
 uint64_t Table::row_count() const {
   return std::accumulate(_chunks.cbegin(), _chunks.cend(), 0,
                          [](uint64_t accumulated_size, const auto& chunk) { return accumulated_size + chunk->size(); });
