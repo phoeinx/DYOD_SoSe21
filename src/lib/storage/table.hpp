@@ -83,6 +83,15 @@ class Table : private Noncopyable {
   void compress_chunk(ChunkID chunk_id);
 
  protected:
-  // Implementation goes here
+  std::vector<std::shared_ptr<Chunk>> _chunks;
+  ChunkOffset _target_chunk_size;
+  std::vector<std::string> _column_names;
+  std::vector<std::string> _column_types;
+
+  std::mutex _add_segment_lock;
+
+  void _add_value_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type);
+  void _add_dictionary_segment_to_vector(std::vector<std::shared_ptr<BaseSegment>>& compressed_segments, const std::string& type,
+                                             const std::shared_ptr<BaseSegment>& segment, const ColumnID column_id);
 };
 }  // namespace opossum
