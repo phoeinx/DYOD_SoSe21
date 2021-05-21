@@ -30,7 +30,7 @@ class ReferenceSegment : public BaseSegment {
 
     // TODO:Refactoring neccessary
     return (
-        *(_referenced_table->get_chunk(position.chunk_id)).get_segment(_referenced_column_id))[position.chunk_offset];
+        *(_referenced_table->get_chunk(position.chunk_id).get_segment(_referenced_column_id)))[position.chunk_offset];
   };
 
   void append(const AllTypeVariant&) override { throw std::logic_error("ReferenceSegment is immutable"); };
