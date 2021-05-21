@@ -57,6 +57,46 @@ std::function<bool(T, T)> TableScan::_get_comparator(ScanType type) {
   return _return;
 }
 
+std::function<int(ValueID, ValueID)> TableScan::_get_compare_value(ScanType type) {
+  std::function<int(ValueID, ValueID)> _return;
+
+  switch (type) {
+    case ScanType::OpEquals: {
+      _return = [](ValueID upper_bound, ValueID lower_bound) { return upper_bound != lower_bound ? lower_bound : INVALID_VALUE_ID; };
+      break;
+    }
+    case ScanType::OpNotEquals: {
+      _return = [](ValueID upper_bound, ValueID lower_bound) { return upper_bound != lower_bound ? lower_bound : INVALID_VALUE_ID; };
+      break;
+    }
+    case ScanType::OpGreaterThanEquals: {
+      _return = [](ValueID upper_bound, ValueID lower_bound) { return lower_bound; };
+      break;
+    }
+    case ScanType::OpGreaterThan: {
+      // if the search value exists in our dictionary we can use it as the value to compare against with greater than 
+      // if the search value does not exist in our dictionary, we have to take the next smaller value to compare against
+      // subtracting one is safe, because in the case that our search value is smaller than every value in the dictionary
+      // the resulting compare value becomes negative and every ValueID of the dictionary is greater than a negative number
+      _return = [](ValueID upper_bound, ValueID lower_bound) { return upper_bound != lower_bound ? lower_bound : lower_bound - 1; };
+      break;
+    }
+    case ScanType::OpLessThanEquals: {
+      _return = [](ValueID upper_bound, ValueID lower_bound) { return upper_bound != lower_bound ? lower_bound : lower_bound - 1; };
+      break;
+    }
+    case ScanType::OpLessThan: {
+      _return = [](ValueID upper_bound, ValueID lower_bound) { return lower_bound; };
+      break;
+    }
+    default: {
+      throw std::runtime_error("Operator not implemented");
+      break;
+    }
+  }
+  return _return;
+}
+
 std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const Table>& input_table) {
   const auto num_chunks = input_table->chunk_count();
   std::vector<RowID> position_list;
@@ -82,17 +122,27 @@ std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const 
           }
         }
       } else if (const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment); typed_dictionary_segment != nullptr ) {
-        auto dictionary_comparator = _get_comparator<int>(_scan_type);
-        //const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment);
-        auto values = typed_dictionary_segment->attribute_vector();
-        auto search_value_id = typed_dictionary_segment->lower_bound(typed_search_value);
+          auto dictionary_comparator = _get_comparator<int>(_scan_type);
+          //const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment);
+          auto attribute_value_ids = typed_dictionary_segment->attribute_vector();
 
-        // Compare each value of dictionary segment against the compare value with comparator
-        for (auto cell_id = 0ul, typed_segment_size = values->size(); cell_id < typed_segment_size; ++cell_id) {
-          if (dictionary_comparator(values->get(cell_id), search_value_id)) {
-            position_list.push_back(RowID{static_cast<ChunkID>(chunk_id), static_cast<ChunkOffset>(cell_id)});
+          auto search_value_id = _get_compare_value(_scan_type)(typed_dictionary_segment->upper_bound(typed_search_value), typed_dictionary_segment->lower_bound(typed_search_value));
+
+          //Compare each value of dictionary segment against the compare value with comparator
+          for (auto cell_id = 0ul, typed_segment_size = attribute_value_ids->size(); cell_id < typed_segment_size; ++cell_id) {
+            if (dictionary_comparator(attribute_value_ids->get(cell_id), search_value_id)) {
+              position_list.push_back(RowID{static_cast<ChunkID>(chunk_id), static_cast<ChunkOffset>(cell_id)});
+            }
           }
-        }
+        // auto dictionary_comparator = _get_comparator<Type>(_scan_type);
+        // auto values = typed_dictionary_segment->attribute_vector();
+
+        // for (auto cell_id = 0ul, typed_segment_size = values->size(); cell_id < typed_segment_size; ++cell_id) {
+        //   const auto actual_value = typed_dictionary_segment->value_by_value_id(values->get(cell_id));
+        //   if (dictionary_comparator(actual_value, typed_search_value)) {
+        //     position_list.push_back(RowID{static_cast<ChunkID>(chunk_id), static_cast<ChunkOffset>(cell_id)});
+        //   }
+        // }
       } else if (const auto typed_reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment); typed_reference_segment != nullptr ) {
         //TODO: Is more performance possible
         auto dictionary_comparator = _get_comparator<Type>(_scan_type);
@@ -100,7 +150,7 @@ std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const 
         auto input_position_list = typed_reference_segment->pos_list();
         auto input_reference_table = typed_reference_segment->referenced_table();
         // Compare each value of dictionary segment against the compare value with comparator
-        for (const auto row_id : *input_position_list) {
+        for (const auto& row_id : *input_position_list) {
           const auto dereferenced_value = type_cast<Type>((*(input_reference_table->get_chunk(row_id.chunk_id).get_segment(_column_id)))[row_id.chunk_offset]);
           if (dictionary_comparator(dereferenced_value, typed_search_value)) {
             position_list.push_back(row_id);
