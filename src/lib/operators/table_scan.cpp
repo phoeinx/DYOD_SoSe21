@@ -61,20 +61,19 @@ std::function<bool(T, T)> TableScan::_get_comparator(ScanType type) {
   return _return;
 }
 
-std::function<int(ValueID, ValueID)> TableScan::_get_compare_value(ScanType type) {
-  std::function<int(ValueID, ValueID)> _return;
+int64_t TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueID lower_bound) {
 
   switch (type) {
     case ScanType::OpEquals: {
-      _return = [](ValueID upper_bound, ValueID lower_bound) { return upper_bound != lower_bound ? lower_bound : INVALID_VALUE_ID; };
+      return upper_bound != lower_bound ? lower_bound : INVALID_VALUE_ID;
       break;
     }
     case ScanType::OpNotEquals: {
-      _return = [](ValueID upper_bound, ValueID lower_bound) { return upper_bound != lower_bound ? lower_bound : INVALID_VALUE_ID; };
+      return upper_bound != lower_bound ? lower_bound : INVALID_VALUE_ID;
       break;
     }
     case ScanType::OpGreaterThanEquals: {
-      _return = [](ValueID upper_bound, ValueID lower_bound) { return lower_bound; };
+      return lower_bound;
       break;
     }
     case ScanType::OpGreaterThan: {
@@ -82,15 +81,29 @@ std::function<int(ValueID, ValueID)> TableScan::_get_compare_value(ScanType type
       // if the search value does not exist in our dictionary, we have to take the next smaller value to compare against
       // subtracting one is safe, because in the case that our search value is smaller than every value in the dictionary
       // the resulting compare value becomes negative and every ValueID of the dictionary is greater than a negative number
-      _return = [](ValueID upper_bound, ValueID lower_bound) { return upper_bound != lower_bound ? lower_bound : lower_bound - 1; };
+      if (upper_bound == lower_bound && upper_bound == ValueID{0}) { 
+        return ValueID{0};
+      } else {
+        return upper_bound != lower_bound ? lower_bound : ValueID{lower_bound - 1}; 
+      }
       break;
     }
     case ScanType::OpLessThanEquals: {
-      _return = [](ValueID upper_bound, ValueID lower_bound) { return upper_bound != lower_bound ? lower_bound : lower_bound - 1; };
+      if (upper_bound == lower_bound && upper_bound == ValueID{0} ) { 
+        // This should be something negative or which would be afterwards evaluated to false
+        return -1;
+      } else {
+        return upper_bound != lower_bound ? lower_bound : ValueID{lower_bound - 1};
+      }
       break;
     }
     case ScanType::OpLessThan: {
-      _return = [](ValueID upper_bound, ValueID lower_bound) { return lower_bound; };
+      if (upper_bound == lower_bound && upper_bound == ValueID{0} ) { 
+        // This should be something negative or which would be afterwards evaluated to false
+        return -1;
+      } else {
+        return lower_bound;
+      }
       break;
     }
     default: {
@@ -98,7 +111,7 @@ std::function<int(ValueID, ValueID)> TableScan::_get_compare_value(ScanType type
       break;
     }
   }
-  return _return;
+  return INVALID_VALUE_ID;
 }
 
 std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const Table>& input_table) {
@@ -126,11 +139,11 @@ std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const 
           }
         }
       } else if (const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment); typed_dictionary_segment != nullptr ) {
-          auto dictionary_comparator = _get_comparator<int>(_scan_type);
+          auto dictionary_comparator = _get_comparator<int64_t>(_scan_type);
           //const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment);
           auto attribute_value_ids = typed_dictionary_segment->attribute_vector();
 
-          auto search_value_id = _get_compare_value(_scan_type)(typed_dictionary_segment->upper_bound(typed_search_value), typed_dictionary_segment->lower_bound(typed_search_value));
+          auto search_value_id = _get_compare_value(_scan_type, typed_dictionary_segment->upper_bound(typed_search_value), typed_dictionary_segment->lower_bound(typed_search_value));
 
           //Compare each value of dictionary segment against the compare value with comparator
           for (auto cell_id = 0ul, typed_segment_size = attribute_value_ids->size(); cell_id < typed_segment_size; ++cell_id) {

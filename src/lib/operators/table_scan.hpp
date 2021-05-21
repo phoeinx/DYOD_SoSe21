@@ -34,7 +34,7 @@ class TableScan : public AbstractOperator {
 
   std::shared_ptr<const Table> _create_reference_output_table(const std::shared_ptr<const Table>& input_table, const std::vector<RowID>& position_list, ChunkOffset target_chunk_size, ColumnCount column_count);
   std::vector<RowID> _create_position_list(const std::shared_ptr<const Table>& input_table);
-  std::function<int(ValueID, ValueID)> _get_compare_value(ScanType type);
+  int64_t _get_compare_value(ScanType type, ValueID upper_bound, ValueID lower_bound);
 
   const ColumnID _column_id;
   const ScanType _scan_type;
