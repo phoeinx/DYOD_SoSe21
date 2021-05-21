@@ -17,6 +17,10 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
 
   std::vector<RowID> position_list = _create_position_list(input_table);
   // TODO: Resolve possible indirections over reference segments in input_table
+  auto first_input_segment = input_table->get_chunk(ChunkID{0}).get_segment(ColumnID{0});
+  if (const auto typed_reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(first_input_segment); typed_reference_segment != nullptr )  {
+    input_table = typed_reference_segment->referenced_table();
+  }
   return _create_reference_output_table(input_table, std::move(position_list), input_table->target_chunk_size(), input_table->column_count());
 }
 
