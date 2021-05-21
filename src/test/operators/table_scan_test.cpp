@@ -104,49 +104,57 @@ protected:
 TEST_F(OperatorsTableScanTest, DoubleScan) {
  std::shared_ptr<Table> expected_result = load_table("src/test/tables/int_float_filtered.tbl", 2);
 
+ auto pr1 = std::make_shared<Print>(_table_wrapper);
+ pr1->execute();
+
  auto scan_1 = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpGreaterThanEquals, 1234);
- // scan_1->execute();
+ scan_1->execute();
 
- // auto scan_2 = std::make_shared<TableScan>(scan_1, ColumnID{1}, ScanType::OpLessThan, 457.9);
- // scan_2->execute();
+ std::cout << " -------- " << std::endl;
+ auto pr2 = std::make_shared<Print>(scan_1);
+ pr2->execute();
 
- // EXPECT_TABLE_EQ(scan_2->get_output(), expected_result);
+ auto scan_2 = std::make_shared<TableScan>(scan_1, ColumnID{1}, ScanType::OpLessThan, 457.9);
+ scan_2->execute();
+ std::cout << " scan 2 complete " << std::endl;
+ EXPECT_TABLE_EQ(scan_2->get_output(), expected_result);
+ std::cout << " expect table eq complete " << std::endl;
 }
 
-// TEST_F(OperatorsTableScanTest, EmptyResultScan) {
-//  auto scan_1 = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpGreaterThan, 90000);
-//  scan_1->execute();
+TEST_F(OperatorsTableScanTest, EmptyResultScan) {
+ auto scan_1 = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpGreaterThan, 90000);
+ scan_1->execute();
 
-//  for (auto i = ChunkID{0}; i < scan_1->get_output()->chunk_count(); i++)
-//    EXPECT_EQ(scan_1->get_output()->get_chunk(i).column_count(), 2u);
-// }
+ for (auto i = ChunkID{0}; i < scan_1->get_output()->chunk_count(); i++)
+   EXPECT_EQ(scan_1->get_output()->get_chunk(i).column_count(), 2u);
+}
 
-// TEST_F(OperatorsTableScanTest, SingleScanReturnsCorrectRowCount) {
-//  std::shared_ptr<Table> expected_result = load_table("src/test/tables/int_float_filtered2.tbl", 1);
+TEST_F(OperatorsTableScanTest, SingleScanReturnsCorrectRowCount) {
+ std::shared_ptr<Table> expected_result = load_table("src/test/tables/int_float_filtered2.tbl", 1);
 
-//  auto scan = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpGreaterThanEquals, 1234);
-//  scan->execute();
+ auto scan = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpGreaterThanEquals, 1234);
+ scan->execute();
 
-//  EXPECT_TABLE_EQ(scan->get_output(), expected_result);
-// }
+ EXPECT_TABLE_EQ(scan->get_output(), expected_result);
+}
 
-// TEST_F(OperatorsTableScanTest, ScanOnDictColumn) {
-//  // we do not need to check for a non existing value, because that happens automatically when we scan the second chunk
+TEST_F(OperatorsTableScanTest, ScanOnDictColumn) {
+ // we do not need to check for a non existing value, because that happens automatically when we scan the second chunk
 
-//  std::map<ScanType, std::vector<AllTypeVariant>> tests;
-//  tests[ScanType::OpEquals] = {104};
-//  tests[ScanType::OpNotEquals] = {100, 102, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
-//  tests[ScanType::OpLessThan] = {100, 102};
-//  tests[ScanType::OpLessThanEquals] = {100, 102, 104};
-//  tests[ScanType::OpGreaterThan] = {106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
-//  tests[ScanType::OpGreaterThanEquals] = {104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
-//  for (const auto& test : tests) {
-//    auto scan = std::make_shared<TableScan>(_table_wrapper_even_dict, ColumnID{0}, test.first, 4);
-//    scan->execute();
+ std::map<ScanType, std::vector<AllTypeVariant>> tests;
+ tests[ScanType::OpEquals] = {104};
+ tests[ScanType::OpNotEquals] = {100, 102, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
+ tests[ScanType::OpLessThan] = {100, 102};
+ tests[ScanType::OpLessThanEquals] = {100, 102, 104};
+ tests[ScanType::OpGreaterThan] = {106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
+ tests[ScanType::OpGreaterThanEquals] = {104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
+ for (const auto& test : tests) {
+   auto scan = std::make_shared<TableScan>(_table_wrapper_even_dict, ColumnID{0}, test.first, 4);
+   scan->execute();
 
-//    ASSERT_COLUMN_EQ(scan->get_output(), ColumnID{1}, test.second);
-//  }
-// }
+   ASSERT_COLUMN_EQ(scan->get_output(), ColumnID{1}, test.second);
+ }
+}
 
 // TEST_F(OperatorsTableScanTest, ScanOnReferencedDictColumn) {
 //  // we do not need to check for a non existing value, because that happens automatically when we scan the second chunk
