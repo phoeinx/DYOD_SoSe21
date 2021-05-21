@@ -98,13 +98,11 @@ void Table::_add_value_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std
   });
 }
 
-void Table::_add_dictionary_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std::string& type,
-                                             const std::shared_ptr<BaseSegment>& segment) {
+void Table::_add_dictionary_segment_to_vector(std::vector<std::shared_ptr<BaseSegment>>& compressed_segments, const std::string& type,
+                                             const std::shared_ptr<BaseSegment>& segment, const ColumnID column_id) {
   resolve_data_type(type, [&](const auto data_type_t) {
     using ColumnDataType = typename decltype(data_type_t)::type;
-    const auto dictionary_segment = std::make_shared<DictionarySegment<ColumnDataType>>(segment);
-    std::lock_guard<std::mutex> guard(_add_segment_lock);
-    chunk->add_segment(dictionary_segment);
+    compressed_segments[column_id] = std::make_shared<DictionarySegment<ColumnDataType>>(segment);
   });
 }
 
@@ -114,19 +112,29 @@ void Table::compress_chunk(ChunkID chunk_id) {
   const auto chunk_column_count = chunk.column_count();
 
   std::vector<std::thread> threads;
-  threads.reserve(chunk.size());
+  threads.reserve(chunk_column_count);
 
-  for (auto column = 0; column < chunk_column_count; column++) {
-    const auto segment_type = _column_types[column];
-    auto segment = chunk.get_segment(static_cast<ColumnID>(column));
+  auto compressed_segments = std::vector<std::shared_ptr<BaseSegment>>{chunk_column_count};
+ 
+  // Compress each segment in chunk by creating dictionary segments concurrently
+  for (auto column_id = ColumnID{0}; column_id < chunk_column_count; ++column_id) {
+    const auto segment_type = _column_types[column_id];
+    auto segment = chunk.get_segment(column_id);
     
-    threads.emplace_back(&Table::_add_dictionary_segment_to_chunk, this, std::ref(compressed_chunk), segment_type, segment);
+    threads.emplace_back(&Table::_add_dictionary_segment_to_vector, this, std::ref(compressed_segments), segment_type, segment, column_id);
   }
 
+  // Wait for all compressions to be finished
   for (auto& thread : threads) {
     thread.join();
   }
 
+  // Add compressed segments to chunk
+  for (auto column_id = ColumnID{0}; column_id < chunk_column_count; ++column_id) {
+    compressed_chunk->add_segment(compressed_segments[column_id]);
+  }
+
+  // Swap uncompressed with compressed chunk
   _chunks[chunk_id] = compressed_chunk;
 }
 
