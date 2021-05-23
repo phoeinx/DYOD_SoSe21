@@ -267,4 +267,10 @@ TEST_F(OperatorsTableScanTest, ScanOnWideDictionarySegment) {
  EXPECT_EQ(scan_2->get_output()->row_count(), static_cast<size_t>(37));
 }
 
+
+TEST_F(OperatorsTableScanTest, NoMatchingTypes) {
+ auto scan_1 = std::make_shared<TableScan>(_table_wrapper, ColumnID{1}, ScanType::OpGreaterThan, 1);
+ EXPECT_THROW(scan_1->execute();, std::exception) << "Should throw not the same value exception";
+}
+
 }  // namespace opossum

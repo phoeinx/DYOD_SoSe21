@@ -17,10 +17,14 @@ const AllTypeVariant& TableScan::search_value() const { return _search_value; }
 std::shared_ptr<const Table> TableScan::_on_execute() {
   auto input_table = _left_input_table();
 
+  //TODO: Check if _scan_type is the same type as the column to be searched
+
   std::vector<RowID> position_list = _create_position_list(input_table);
-  // TODO: Resolve possible indirections over reference segments in input_table
+
+  // Check if the input table consists of reference segments or not
   auto first_input_segment = input_table->get_chunk(ChunkID{0}).get_segment(ColumnID{0});
-  if (const auto typed_reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(first_input_segment); typed_reference_segment != nullptr )  {
+  const auto typed_reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(first_input_segment);
+  if ( typed_reference_segment != nullptr )  {
     input_table = typed_reference_segment->referenced_table();
   }
   return _create_reference_output_table(input_table, std::move(position_list), input_table->target_chunk_size(), input_table->column_count());
