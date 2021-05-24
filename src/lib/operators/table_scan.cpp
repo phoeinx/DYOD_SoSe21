@@ -202,16 +202,21 @@ std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const 
 }
 
 std::shared_ptr<const Table> TableScan::_create_reference_output_table(const std::shared_ptr<const Table>& input_table, const std::vector<RowID>& position_list, ChunkOffset target_chunk_size, ColumnCount column_count) {
+  auto resulting_table = std::make_shared<Table>(target_chunk_size);
+  
+  // If the TableScan yields no result return an empty chunk
+  if (position_list.empty()) return resulting_table;
+  
   Chunk chunk;
   auto ref_position_list = std::make_shared<PosList>(std::move(position_list));
-  auto resulting_table = std::make_shared<Table>(target_chunk_size);
-
+  
+  // Return a Table consisting of one Chunk with one ReferenceSegment per Column 
   for (auto current_column_id = static_cast<ColumnCount>(0), columns = input_table->column_count();
        current_column_id < columns; current_column_id++) {
+    resulting_table->add_column(input_table->column_name(static_cast<ColumnID>(current_column_id)),
+                      input_table->column_type(static_cast<ColumnID>(current_column_id)));
     chunk.add_segment(
         std::make_shared<ReferenceSegment>(input_table, static_cast<ColumnID>(current_column_id), ref_position_list));
-    resulting_table->add_column(input_table->column_name(static_cast<ColumnID>(current_column_id)),
-                                input_table->column_type(static_cast<ColumnID>(current_column_id)));
   }
   resulting_table->emplace_chunk(std::move(chunk));
   return resulting_table;
