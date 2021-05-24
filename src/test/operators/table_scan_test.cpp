@@ -269,7 +269,7 @@ TEST_F(OperatorsTableScanTest, ScanOnWideDictionarySegment) {
 
 
 TEST_F(OperatorsTableScanTest, NoMatchingTypes) {
- auto scan_1 = std::make_shared<TableScan>(_table_wrapper, ColumnID{1u}, ScanType::OpGreaterThan, 1);
+ auto scan_1 = std::make_shared<TableScan>(_table_wrapper, ColumnID{1}, ScanType::OpGreaterThan, 1);
  EXPECT_THROW(scan_1->execute();, std::exception) << "Should throw not the same value exception";
 }
 
