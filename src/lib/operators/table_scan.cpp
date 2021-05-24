@@ -142,12 +142,15 @@ int64_t TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
 }
 
 std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const Table>& input_table) {
+
   const auto num_chunks = input_table->chunk_count();
   std::vector<RowID> position_list;
-  
+
   resolve_data_type(input_table->column_type(_column_id), [&](auto type) {
     using Type = typename decltype(type)::type;
     Type typed_search_value = type_cast<Type>(_search_value);
+
+    Assert((_search_value.type() == typeid(Type)), "Type mismatch of the type of the search value and the column type");
 
     // Search in each chunk in column
     for (auto chunk_id = ChunkID{0}; chunk_id < num_chunks; ++chunk_id) {
