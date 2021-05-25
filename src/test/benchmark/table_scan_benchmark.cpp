@@ -57,8 +57,8 @@ protected:
    small_test_table->add_column("FirstName", "string");
    for (int i = 0; i <= 240; i += 1) small_test_table->append({i,"TestFirst"});
 
-   _medium_table_wrapper = std::make_shared<TableWrapper>(std::move(small_test_table));
-   _medium_table_wrapper->execute();
+   _small_table_wrapper = std::make_shared<TableWrapper>(std::move(small_test_table));
+   _small_table_wrapper->execute();
 
    using namespace std::chrono;
    start_ms = duration_cast< nanoseconds >(system_clock::now().time_since_epoch());
@@ -100,7 +100,7 @@ TEST_F(BenchmarkTableScanTest, TripleScanOnSmallTable) {
 
 TEST_F(BenchmarkTableScanTest, TripleScanOnMediumTable) {
 
- auto scan_1 = std::make_shared<TableScan>(_small_table_wrapper, ColumnID{0}, ScanType::OpGreaterThanEquals, 6000);
+ auto scan_1 = std::make_shared<TableScan>(_medium_table_wrapper, ColumnID{0}, ScanType::OpGreaterThanEquals, 6000);
  auto scan_2 = std::make_shared<TableScan>(scan_1, ColumnID{0}, ScanType::OpLessThan, 18000);
  auto scan_3 = std::make_shared<TableScan>(scan_2, ColumnID{1}, ScanType::OpEquals, "TestFirst");
 
@@ -108,7 +108,7 @@ TEST_F(BenchmarkTableScanTest, TripleScanOnMediumTable) {
 
 TEST_F(BenchmarkTableScanTest, TripleScanOnLargeTable) {
 
- auto scan_1 = std::make_shared<TableScan>(_small_table_wrapper, ColumnID{0}, ScanType::OpGreaterThanEquals, 600000);
+ auto scan_1 = std::make_shared<TableScan>(_large_table_wrapper, ColumnID{0}, ScanType::OpGreaterThanEquals, 600000);
  auto scan_2 = std::make_shared<TableScan>(scan_1, ColumnID{0}, ScanType::OpLessThan, 1800000);
  auto scan_3 = std::make_shared<TableScan>(scan_2, ColumnID{2}, ScanType::OpEquals, "TestFirst");
 
