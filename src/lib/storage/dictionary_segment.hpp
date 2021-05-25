@@ -4,9 +4,9 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
-#include <unordered_set>
 
 #include "all_type_variant.hpp"
 #include "fixed_size_attribute_vector.hpp"
@@ -31,7 +31,7 @@ class DictionarySegment : public BaseSegment {
    */
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
     const auto segment_size = base_segment->size();
-    
+
     auto dictionary_set = std::unordered_set<T>();
 
     for (auto cell_id = 0u; cell_id < segment_size; ++cell_id) {
@@ -40,8 +40,8 @@ class DictionarySegment : public BaseSegment {
 
     _dictionary = std::make_shared<std::vector<T>>();
     _dictionary->reserve(dictionary_set.size());
-    for (auto it = dictionary_set.begin(); it != dictionary_set.end(); ) {
-        _dictionary->push_back(std::move(dictionary_set.extract(it++).value()));
+    for (auto it = dictionary_set.begin(); it != dictionary_set.end();) {
+      _dictionary->push_back(std::move(dictionary_set.extract(it++).value()));
     }
 
     std::sort(_dictionary->begin(), _dictionary->end());

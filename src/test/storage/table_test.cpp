@@ -8,8 +8,8 @@
 #include "gtest/gtest.h"
 
 #include "../lib/resolve_type.hpp"
-#include "../lib/storage/table.hpp"
 #include "../lib/storage/dictionary_segment.hpp"
+#include "../lib/storage/table.hpp"
 
 namespace opossum {
 
@@ -151,7 +151,6 @@ TEST_F(StorageTableTest, CompressChunk) {
   const auto& chunk_3 = t.get_chunk(ChunkID{0});
   const auto& segment_3 = chunk_3.get_segment(ColumnID{0});
   EXPECT_NE(std::dynamic_pointer_cast<DictionarySegment<int>>(segment_3), nullptr);
-
 }
 
 TEST_F(StorageTableTest, CreateChunk) {
@@ -172,7 +171,7 @@ TEST_F(StorageTableTest, ColumnDefinition) {
   table.add_column("col3", "int");
   table.append({4});
   // check that new column definition cannot be added if the first row is not empty
-  EXPECT_THROW(table.add_column_definition("col4","string"), std::exception);
+  EXPECT_THROW(table.add_column_definition("col4", "string"), std::exception);
 }
 
 }  // namespace opossum

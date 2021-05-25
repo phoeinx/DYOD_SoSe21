@@ -50,9 +50,7 @@ void Table::append(const std::vector<AllTypeVariant>& values) {
 
 ColumnCount Table::column_count() const { return _chunks[0]->column_count(); }
 
-void Table::create_new_chunk() {
-  _chunks.emplace_back(std::make_shared<Chunk>());
-}
+void Table::create_new_chunk() { _chunks.emplace_back(std::make_shared<Chunk>()); }
 
 uint64_t Table::row_count() const {
   return std::accumulate(_chunks.cbegin(), _chunks.cend(), 0,
@@ -98,8 +96,9 @@ void Table::_add_value_segment_to_chunk(std::shared_ptr<Chunk>& chunk, const std
   });
 }
 
-void Table::_add_dictionary_segment_to_vector(std::vector<std::shared_ptr<BaseSegment>>& compressed_segments, const std::string& type,
-                                             const std::shared_ptr<BaseSegment>& segment, const ColumnID column_id) {
+void Table::_add_dictionary_segment_to_vector(std::vector<std::shared_ptr<BaseSegment>>& compressed_segments,
+                                              const std::string& type, const std::shared_ptr<BaseSegment>& segment,
+                                              const ColumnID column_id) {
   resolve_data_type(type, [&](const auto data_type_t) {
     using ColumnDataType = typename decltype(data_type_t)::type;
     compressed_segments[column_id] = std::make_shared<DictionarySegment<ColumnDataType>>(segment);
@@ -115,13 +114,14 @@ void Table::compress_chunk(ChunkID chunk_id) {
   threads.reserve(chunk_column_count);
 
   auto compressed_segments = std::vector<std::shared_ptr<BaseSegment>>{chunk_column_count};
- 
+
   // Compress each segment in chunk by creating dictionary segments concurrently
   for (auto column_id = ColumnID{0}; column_id < chunk_column_count; ++column_id) {
     const auto segment_type = _column_types[column_id];
     auto segment = chunk.get_segment(column_id);
 
-    threads.emplace_back(&Table::_add_dictionary_segment_to_vector, this, std::ref(compressed_segments), segment_type, segment, column_id);
+    threads.emplace_back(&Table::_add_dictionary_segment_to_vector, this, std::ref(compressed_segments), segment_type,
+                         segment, column_id);
   }
 
   // Wait for all compressions to be finished

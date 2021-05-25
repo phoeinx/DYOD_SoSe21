@@ -10,7 +10,7 @@
 namespace opossum {
 
 /**
- * operator to print the table with its data
+ * Operator that prints a table with its data.
  */
 class Print : public AbstractOperator {
  public:
