@@ -27,6 +27,7 @@ class TableScan : public AbstractOperator {
   const AllTypeVariant& search_value() const;
 
  protected:
+  // not known operator throws exception
   std::shared_ptr<const Table> _on_execute() override;
 
   template <typename T>

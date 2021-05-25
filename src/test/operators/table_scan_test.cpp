@@ -44,7 +44,7 @@ protected:
    table->add_column("b", "float");
 
    for (int i = 1; i < 20; ++i) {
-     table->append({i, 100.1 + i});
+     table->append({i, 100.1f + i});
    }
 
    table->compress_chunk(ChunkID(0));
@@ -63,7 +63,7 @@ protected:
    table->add_column("b", "float");
 
    for (int i = 0; i <= num_entries; i++) {
-     table->append({i, 100.0f + i});
+     table->append({i, 100.0 + i});
    }
 
    table->compress_chunk(ChunkID(0));
@@ -107,8 +107,16 @@ TEST_F(OperatorsTableScanTest, DoubleScan) {
  auto scan_1 = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpGreaterThanEquals, 1234);
  scan_1->execute();
 
+ EXPECT_EQ(scan_1->column_id(), ColumnID{0});
+ EXPECT_EQ(scan_1->scan_type(), ScanType::OpGreaterThanEquals);
+ EXPECT_EQ(scan_1->search_value(), static_cast<AllTypeVariant>(1234));
+
  auto scan_2 = std::make_shared<TableScan>(scan_1, ColumnID{1}, ScanType::OpLessThan, 457.9f);
  scan_2->execute();
+
+ EXPECT_EQ(scan_2->column_id(), ColumnID{1});
+ EXPECT_EQ(scan_2->scan_type(), ScanType::OpLessThan);
+ EXPECT_EQ(scan_2->search_value(), static_cast<AllTypeVariant>(457.9f));
 
  EXPECT_TABLE_EQ(scan_2->get_output(), expected_result);
 }
@@ -142,6 +150,24 @@ TEST_F(OperatorsTableScanTest, ScanOnDictColumn) {
  tests[ScanType::OpGreaterThanEquals] = {104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
  for (const auto& test : tests) {
    auto scan = std::make_shared<TableScan>(_table_wrapper_even_dict, ColumnID{0}, test.first, 4);
+   scan->execute();
+
+   ASSERT_COLUMN_EQ(scan->get_output(), ColumnID{1}, test.second);
+ }
+}
+
+TEST_F(OperatorsTableScanTest, ScanOnDictColumnNotExistingValue) {
+ // we do not need to check for a non existing value, because that happens automatically when we scan the second chunk
+
+ std::map<ScanType, std::vector<AllTypeVariant>> tests;
+ tests[ScanType::OpEquals] = {};
+ tests[ScanType::OpNotEquals] = {100, 102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
+ tests[ScanType::OpLessThan] = {100, 102, 104};
+ tests[ScanType::OpLessThanEquals] = {100, 102, 104};
+ tests[ScanType::OpGreaterThan] = {106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
+ tests[ScanType::OpGreaterThanEquals] = {106, 108, 110, 112, 114, 116, 118, 120, 122, 124};
+ for (const auto& test : tests) {
+   auto scan = std::make_shared<TableScan>(_table_wrapper_even_dict, ColumnID{0}, test.first, 5);
    scan->execute();
 
    ASSERT_COLUMN_EQ(scan->get_output(), ColumnID{1}, test.second);

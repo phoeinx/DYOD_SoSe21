@@ -23,16 +23,16 @@ class ReferenceSegment : public BaseSegment {
   // the parameters specify the positions and the referenced segment
   ReferenceSegment(const std::shared_ptr<const Table>& referenced_table, const ColumnID referenced_column_id,
                    const std::shared_ptr<const PosList>& pos)
-      : _referenced_table(referenced_table), _referenced_column_id(referenced_column_id), _position_list(pos){};
+      : _referenced_table(referenced_table), _referenced_column_id(referenced_column_id), _position_list(pos) {}
 
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
     auto position = _position_list->at(chunk_offset);
 
     return (
         *(_referenced_table->get_chunk(position.chunk_id).get_segment(_referenced_column_id)))[position.chunk_offset];
-  };
+  }
 
-  void append(const AllTypeVariant&) override { throw std::logic_error("ReferenceSegment is immutable"); };
+  void append(const AllTypeVariant&) override { throw std::logic_error("ReferenceSegment is immutable"); }
 
   ChunkOffset size() const override { return static_cast<ChunkOffset>(_position_list->size()); }
 

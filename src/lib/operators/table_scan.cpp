@@ -71,7 +71,7 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
 
   switch (type) {
     case ScanType::OpEquals: {
-      // when not in dictionary, select nothing
+      // when not in dictionary, value is not in segment, therefore select nothing
       if (upper_bound != lower_bound) {
         return lower_bound;
       } else {
@@ -80,7 +80,7 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
       break;
     }
     case ScanType::OpNotEquals: {
-      // when not in dictionary, select all
+      // when not in dictionary, value is not in segment, therefore select everything, since everything is not equal to search value
       if (upper_bound == lower_bound ) {
         return SELECT_EVERYTHING;
       } else {
@@ -89,8 +89,10 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
       break;
     }
     case ScanType::OpGreaterThanEquals: {
-      // when lower_bound == 0, select everything
-      // when lower_bound == INVALID_VALUE_ID, select nothing
+      // when lower_bound == INVALID_VALUE_ID, select nothing, since value >= search value was not found in dictionary, 
+      //    therefore there are no values >= in segment
+      // when lower_bound == 0, select everything, since first value in sorted dictionary >= search value 
+      //    means that everything is greater or equal to search value
       if (lower_bound == INVALID_VALUE_ID) {
         return EMPTY_RESULT;
       } else if (lower_bound == ValueID{0}) {
@@ -101,8 +103,15 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
       break;
     }
     case ScanType::OpGreaterThan: {
-      // when upper_bound == lower_bound && upper_bound == 0, select everything
-      // when upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID, select nothing
+      // when upper_bound == lower_bound, the search value is not in the dictionary, 
+      //    since the first value >= search value and the first value > search value are the same
+      // when the search value is not in the dictionary and the found index is 0, 
+      //    select everything, since the found value is smaller than the smallest value
+      // when the search value is not in the dictionary and the found index is INVALID_VALUE_ID, 
+      //    select nothing, since the found value is bigger than the biggest value
+      // when the search value is not in the dictionary, comparisons against the next smaller value give us the correct results, 
+      //    since lower_bound gives us here the first value > the search value, which we also want to include
+      // when the search value is in the dictionary, we return its index
       if (upper_bound == lower_bound && upper_bound == ValueID{0}) { 
         return SELECT_EVERYTHING;
       } else if (upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID) {
@@ -115,8 +124,15 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
       break;
     }
     case ScanType::OpLessThanEquals: {
-      // when upper_bound == lower_bound && upper_bound == 0, select nothing
-      // when upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID, select everything
+      // when upper_bound == lower_bound, the search value is not in the dictionary, 
+      //    since the first value >= search value and the first value > search value are the same
+      // when the search value is not in the dictionary and the found index is 0, 
+      //    select nothing, since the found value is smaller than the smallest value and nothing is smaller than it
+      // when the search value is not in the dictionary and the found index is INVALID_VALUE_ID, 
+      //    select everything, since the found value is bigger than the biggest value and everything is smaller than it
+      // when the search value is not in the dictionary, comparisons against the next smaller value give us the correct results, 
+      //    since lower_bound gives us here the first value > the search value, but we also want to include the next smaller one
+      // when the search value is in the dictionary, we return its index
       if (upper_bound == lower_bound && upper_bound == ValueID{0} ) { 
         return EMPTY_RESULT;
       } else if (upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID) {
@@ -129,8 +145,14 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
       break;
     }
     case ScanType::OpLessThan: {
-      // when upper_bound == lower_bound && upper_bound == 0, select nothing
-      // when upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID, select everything
+      // when upper_bound == lower_bound, the search value is not in the dictionary, 
+      //    since the first value >= search value and the first value > search value are the same
+      // when the search value is not in the dictionary and the found index is 0, 
+      //    select nothing, since the found value is smaller than the smallest value and nothing is smaller than it
+      // when the search value is not in the dictionary and the found index is INVALID_VALUE_ID, 
+      //    select everything, since the found value is bigger than the biggest value and everything is smaller than it
+      // Otherwise, we return its index, since everything that's smaller than the search value is also smaller 
+      //    than the first value bigger than the search value 
       if (upper_bound == lower_bound && upper_bound == ValueID{0} ) { 
         return EMPTY_RESULT;
       } else if (upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID) {
