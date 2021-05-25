@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_set>
 
 #include "all_type_variant.hpp"
 #include "fixed_size_attribute_vector.hpp"
@@ -30,16 +31,20 @@ class DictionarySegment : public BaseSegment {
    */
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
     const auto segment_size = base_segment->size();
-    _dictionary = std::make_shared<std::vector<T>>(segment_size);
+    
+    auto dictionary_set = std::unordered_set<T>();
 
     for (auto cell_id = 0u; cell_id < segment_size; ++cell_id) {
-      (*_dictionary)[cell_id] = type_cast<T>((*base_segment)[cell_id]);
+      dictionary_set.insert(type_cast<T>((*base_segment)[cell_id]));
+    }
+
+    _dictionary = std::make_shared<std::vector<T>>();
+    _dictionary->reserve(dictionary_set.size());
+    for (auto it = dictionary_set.begin(); it != dictionary_set.end(); ) {
+        _dictionary->push_back(std::move(dictionary_set.extract(it++).value()));
     }
 
     std::sort(_dictionary->begin(), _dictionary->end());
-    const auto first_duplicate_element_it = std::unique(_dictionary->begin(), _dictionary->end());
-    _dictionary->erase(first_duplicate_element_it, _dictionary->end());
-    _dictionary->shrink_to_fit();
 
     const auto dictionary_size = _dictionary->size();
 
