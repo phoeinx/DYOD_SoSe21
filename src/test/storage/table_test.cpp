@@ -154,4 +154,25 @@ TEST_F(StorageTableTest, CompressChunk) {
 
 }
 
+TEST_F(StorageTableTest, CreateChunk) {
+  EXPECT_EQ(t.chunk_count(), 1u);
+  t.create_new_chunk();
+  t.create_new_chunk();
+  t.create_new_chunk();
+  // check that correct number of chunks is in the table after creating them
+  EXPECT_EQ(t.chunk_count(), 4u);
+}
+
+TEST_F(StorageTableTest, ColumnDefinition) {
+  Table table{2};
+  table.add_column_definition("col1", "int");
+  table.add_column_definition("col2", "string");
+  // check that column definition is placed correctly
+  EXPECT_EQ(table.column_id_by_name("col2"), 1u);
+  table.add_column("col3", "int");
+  table.append({4});
+  // check that new column definition cannot be added if the first row is not empty
+  EXPECT_THROW(table.add_column_definition("col4","string"), std::exception);
+}
+
 }  // namespace opossum
