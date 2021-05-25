@@ -207,9 +207,6 @@ std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const 
 std::shared_ptr<const Table> TableScan::_create_reference_output_table(const std::shared_ptr<const Table>& input_table, const std::vector<RowID>& position_list, ChunkOffset target_chunk_size, ColumnCount column_count) {
   auto resulting_table = std::make_shared<Table>(target_chunk_size);
   
-  // If the TableScan yields no result return an empty chunk
-  if (position_list.empty()) return resulting_table;
-  
   Chunk chunk;
   auto ref_position_list = std::make_shared<PosList>(std::move(position_list));
   
