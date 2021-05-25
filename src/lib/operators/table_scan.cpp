@@ -2,7 +2,9 @@
 
 namespace opossum {
 
-const int64_t EMPTY_RESULT{-2};
+// Const values to simplify comparisons in scan of dictionary segments 
+constexpr ValueID EMPTY_RESULT{std::numeric_limits<ValueID::base_type>::max()-1};
+constexpr ValueID SELECT_EVERYTHING{std::numeric_limits<ValueID::base_type>::max()-2};
 
 TableScan::TableScan(const std::shared_ptr<const AbstractOperator>& in, const ColumnID column_id,
                      const ScanType scan_type, const AllTypeVariant search_value)
@@ -65,8 +67,7 @@ std::function<bool(T, T)> TableScan::_get_comparator(ScanType type) {
   return _return;
 }
 
-// TODO: is it possible w/ smaller value type?
-int64_t TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueID lower_bound) {
+ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueID lower_bound) {
 
   switch (type) {
     case ScanType::OpEquals: {
@@ -80,7 +81,11 @@ int64_t TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
     }
     case ScanType::OpNotEquals: {
       // when not in dictionary, select all
-      return upper_bound != lower_bound ? lower_bound : INVALID_VALUE_ID;
+      if (upper_bound == lower_bound ) {
+        return INVALID_VALUE_ID;
+      } else {
+        return lower_bound;
+      }
       break;
     }
     case ScanType::OpGreaterThanEquals: {
@@ -101,11 +106,13 @@ int64_t TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
       // when upper_bound == lower_bound && upper_bound == 0, select everything
       // when upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID, select nothing
       if (upper_bound == lower_bound && upper_bound == ValueID{0}) { 
-        return -1;
+        return SELECT_EVERYTHING;
       } else if (upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID) {
         return EMPTY_RESULT;
+      } else if (upper_bound == lower_bound){
+        return ValueID{lower_bound - 1};
       } else {
-        return upper_bound != lower_bound ? lower_bound : ValueID{lower_bound - 1}; 
+        return lower_bound;
       }
       break;
     }
@@ -116,8 +123,10 @@ int64_t TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
         return EMPTY_RESULT;
       } else if (upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID) {
         return INVALID_VALUE_ID;
+      } else if (upper_bound == lower_bound){
+        return  ValueID{lower_bound - 1};
       } else {
-        return upper_bound != lower_bound ? lower_bound : ValueID{lower_bound - 1};
+        return lower_bound;
       }
       break;
     }
@@ -167,12 +176,19 @@ std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const 
           }
         }
       } else if (const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment); typed_dictionary_segment != nullptr ) {
-          auto dictionary_comparator = _get_comparator<int64_t>(_scan_type);
+          auto dictionary_comparator = _get_comparator<ValueID>(_scan_type);
           auto attribute_value_ids = typed_dictionary_segment->attribute_vector();
 
           auto search_value_id = _get_compare_value(_scan_type, typed_dictionary_segment->upper_bound(typed_search_value), typed_dictionary_segment->lower_bound(typed_search_value));
 
           if (search_value_id == EMPTY_RESULT) {
+            continue;
+          }
+
+          if (search_value_id == SELECT_EVERYTHING) {
+            for (auto cell_id = 0ul, typed_segment_size = attribute_value_ids->size(); cell_id < typed_segment_size; ++cell_id) {
+              position_list.push_back(RowID{static_cast<ChunkID>(chunk_id), static_cast<ChunkOffset>(cell_id)});
+            }
             continue;
           }
 

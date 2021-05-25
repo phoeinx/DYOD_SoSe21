@@ -120,7 +120,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
   for (auto column_id = ColumnID{0}; column_id < chunk_column_count; ++column_id) {
     const auto segment_type = _column_types[column_id];
     auto segment = chunk.get_segment(column_id);
-    
+
     threads.emplace_back(&Table::_add_dictionary_segment_to_vector, this, std::ref(compressed_segments), segment_type, segment, column_id);
   }
 
