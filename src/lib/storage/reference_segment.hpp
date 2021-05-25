@@ -28,7 +28,6 @@ class ReferenceSegment : public BaseSegment {
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
     auto position = _position_list->at(chunk_offset);
 
-    // TODO:Refactoring neccessary
     return (
         *(_referenced_table->get_chunk(position.chunk_id).get_segment(_referenced_column_id)))[position.chunk_offset];
   };

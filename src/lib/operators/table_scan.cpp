@@ -17,8 +17,6 @@ const AllTypeVariant& TableScan::search_value() const { return _search_value; }
 std::shared_ptr<const Table> TableScan::_on_execute() {
   auto input_table = _left_input_table();
 
-  //TODO: Check if _scan_type is the same type as the column to be searched
-
   std::vector<RowID> position_list = _create_position_list(input_table);
 
   // Check if the input table consists of reference segments or not
@@ -170,7 +168,6 @@ std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const 
         }
       } else if (const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment); typed_dictionary_segment != nullptr ) {
           auto dictionary_comparator = _get_comparator<int64_t>(_scan_type);
-          //const auto typed_dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment);
           auto attribute_value_ids = typed_dictionary_segment->attribute_vector();
 
           auto search_value_id = _get_compare_value(_scan_type, typed_dictionary_segment->upper_bound(typed_search_value), typed_dictionary_segment->lower_bound(typed_search_value));
@@ -186,7 +183,6 @@ std::vector<RowID> TableScan::_create_position_list(const std::shared_ptr<const 
             }
           }
       } else if (const auto typed_reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment); typed_reference_segment != nullptr ) {
-        //TODO: Is more performance possible
         auto dictionary_comparator = _get_comparator<Type>(_scan_type);
 
         auto input_position_list = typed_reference_segment->pos_list();

@@ -14,7 +14,6 @@
 
 namespace opossum {
 
-// TODO: Use emplace_back() instead of push_back (?)
 void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) {
   Assert(size() == 0 || segment->size() == size(), "Segment needs to have same number of rows as chunk");
   _segments.push_back(segment);
