@@ -82,7 +82,7 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
     case ScanType::OpNotEquals: {
       // when not in dictionary, select all
       if (upper_bound == lower_bound ) {
-        return INVALID_VALUE_ID;
+        return SELECT_EVERYTHING;
       } else {
         return lower_bound;
       }
@@ -93,16 +93,14 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
       // when lower_bound == INVALID_VALUE_ID, select nothing
       if (lower_bound == INVALID_VALUE_ID) {
         return EMPTY_RESULT;
+      } else if (lower_bound == ValueID{0}) {
+        return SELECT_EVERYTHING;
+      } else {
+        return lower_bound;
       }
-      return lower_bound;
       break;
     }
     case ScanType::OpGreaterThan: {
-      // if the search value exists in our dictionary we can use it as the value to compare against with greater than 
-      // if the search value does not exist in our dictionary, we have to take the next smaller value to compare against
-      // subtracting one is safe, because in the case that our search value is smaller than every value in the dictionary
-      // the resulting compare value becomes negative and every ValueID of the dictionary is greater than a negative number
-
       // when upper_bound == lower_bound && upper_bound == 0, select everything
       // when upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID, select nothing
       if (upper_bound == lower_bound && upper_bound == ValueID{0}) { 
@@ -122,7 +120,7 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
       if (upper_bound == lower_bound && upper_bound == ValueID{0} ) { 
         return EMPTY_RESULT;
       } else if (upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID) {
-        return INVALID_VALUE_ID;
+        return SELECT_EVERYTHING;
       } else if (upper_bound == lower_bound){
         return  ValueID{lower_bound - 1};
       } else {
@@ -135,6 +133,8 @@ ValueID TableScan::_get_compare_value(ScanType type, ValueID upper_bound, ValueI
       // when upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID, select everything
       if (upper_bound == lower_bound && upper_bound == ValueID{0} ) { 
         return EMPTY_RESULT;
+      } else if (upper_bound == lower_bound && upper_bound == INVALID_VALUE_ID) {
+        return SELECT_EVERYTHING;
       } else {
         return lower_bound;
       }
